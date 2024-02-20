@@ -1,0 +1,17 @@
+[package]
+name = "wkt"
+version = "0.1.0"
+edition = "2021"
+authors = ["Duyet Le <me@duyet.net>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "read-wkt-linestring"
+path = "src/bin/read-wkt-linestring.rs"
+
+[dependencies]
+anyhow = "1.0.80"
+geo-types = "0.7.12"
+shared = { path = "../shared" }
+wkt = "0.10.3"
