@@ -6,6 +6,31 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - run: cargo build --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin
+          path: |
+            target/debug/vin-*
+            target/debug/*-wkt-*
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -22,5 +47,4 @@ jobs:
           profile: minimal
           override: true
 
-      - run: cargo build
       - run: cargo test
