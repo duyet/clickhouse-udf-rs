@@ -1,0 +1,16 @@
+[package]
+name = "url"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = 'extract-url'
+path = 'src/bin/extract-url.rs'
+
+[[bin]]
+name = 'has-url'
+path = 'src/bin/has-url.rs'
+
+[dependencies]
+anyhow = "1.0.80"
+shared = { path = "../shared" }

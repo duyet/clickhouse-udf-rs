@@ -313,6 +313,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
 
 [[package]]
+name = "url"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "shared",
+]
+
+[[package]]
 name = "vin"
 version = "0.1.0"
 dependencies = [
