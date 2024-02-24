@@ -7,12 +7,17 @@ env:
 
 jobs:
   build:
+    name: build ${{ matrix.build_type }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
           - macOS-latest
+        build_type:
+          - debug
+          - release
     steps:
       - uses: actions/checkout@v3
 
@@ -22,14 +27,14 @@ jobs:
           profile: minimal
           override: true
 
-      - run: cargo build --release
+      - run: cargo build ${{ matrix.build_type == 'release' && '--release' || '' }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bin
+          name: bin-${{ matrix.build_type }}-${{ matrix.os }}
           path: |
-            target/debug/vin-*
-            target/debug/*-wkt-*
+            target/${{ matrix.build_type }}/vin-*
+            target/${{ matrix.build_type }}/*-wkt-*
 
   test:
     runs-on: ${{ matrix.os }}
