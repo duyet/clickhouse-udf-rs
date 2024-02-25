@@ -12,6 +12,6 @@ path = "src/bin/read-wkt-linestring.rs"
 
 [dependencies]
 anyhow = "1.0.80"
-geo-types = "0.7.12"
+geo-types = "0.7.13"
 shared = { path = "../shared" }
 wkt = "0.10.3"
