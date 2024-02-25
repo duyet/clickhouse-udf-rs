@@ -7,10 +7,11 @@ Compile into binary
 ```bash
 cargo build --release
 
-lls -lhp target/release | grep -v '/\|\.d'
--rwxr-xr-x    1 duet  staff   434K Feb 23 18:28 extract-url
--rwxr-xr-x    1 duet  staff   434K Feb 23 18:28 has-url
+ls -lhp target/release | grep -v '/\|\.d'
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-url
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 has-url
 -rwxr-xr-x    1 duet  staff   515K Feb 22 23:57 read-wkt-linestring
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 string-format
 -rwxr-xr-x    1 duet  staff   2.3M Feb 22 23:25 vin-cleaner
 -rwxr-xr-x    1 duet  staff   2.3M Feb 22 23:25 vin-manuf
 -rwxr-xr-x    1 duet  staff   2.3M Feb 22 23:25 vin-year
@@ -24,6 +25,7 @@ Binary file inside `user_scripts` folder (`/var/lib/clickhouse/user_scripts/` wi
 cp target/release/vin* /var/lib/clickhouse/user_scripts/
 cp target/release/*wkt* /var/lib/clickhouse/user_scripts/
 cp target/release/*url* /var/lib/clickhouse/user_scripts/
+cp target/release/*string* /var/lib/clickhouse/user_scripts/
 ```
 
 ### 2. Creating UDF using XML configuration

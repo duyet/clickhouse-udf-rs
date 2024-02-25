@@ -1,0 +1,12 @@
+[package]
+name = "string"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = 'string-format'
+path = 'src/bin/string-format.rs'
+
+[dependencies]
+anyhow = "1.0.80"
+shared = { path = "../shared" }
