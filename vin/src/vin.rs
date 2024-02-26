@@ -82,7 +82,7 @@ pub fn vin_continent(vin: &str) -> Option<&'static str> {
     let vin = vin_cleaner(vin).unwrap_or_default();
 
     // First character of VIN
-    let x = vin.chars().next()?;
+    let x = vin.chars().next().unwrap_or_default();
 
     match x {
         'A'..='H' => Some("Africa"),
@@ -106,8 +106,8 @@ pub fn vin_year(vin: &str) -> Option<String> {
     // This pos 7 check was introduced in US for NA autos and not valid for EU, Asia Cars
     let year_ch = chars.filter(|&c| c != 'U' && c != 'Z' && c != '0');
 
-    let is_north_america = vin_continent(&vin).unwrap() == "North America";
-    let is_eu = vin_continent(&vin).unwrap() == "Europe";
+    let is_north_america = vin_continent(&vin).unwrap_or_default() == "North America";
+    let is_eu = vin_continent(&vin).unwrap_or_default() == "Europe";
 
     // Define possible model year ranges based on VIN type
     let years = if is_north_america {
@@ -234,12 +234,14 @@ mod tests {
             "123",
             "",
             "abc",
+            "...............",
         ];
         let resl = [
             "General Motors USA",
             "General Motors USA",
             "General Motors USA",
             "General Motors USA",
+            "",
             "",
             "",
             "",
@@ -294,10 +296,11 @@ mod tests {
             "2a4gp54l16r805929 ",
             "JM1BL1M72C1587426 (ok)",
             "... JM1BL1M72C1587426 (ok)",
+            "...............",
             "123",
             "",
         ];
-        let yearsl = ["2014", "2006", "2012", "2012", "", ""];
+        let yearsl = ["2014", "2006", "2012", "2012", "", "", ""];
 
         for (v, r) in vinl.iter().zip(yearsl.iter()) {
             assert_eq!(
