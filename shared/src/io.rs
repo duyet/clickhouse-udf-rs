@@ -4,7 +4,7 @@ pub fn process_stdin(f: fn(&str) -> Option<String>) {
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         // Getting input from stdin line
-        let input = line.unwrap();
+        let input = line.unwrap_or_default();
 
         // Processing input
         let output = f(&input).unwrap_or_default();
