@@ -45,6 +45,10 @@ pub fn vin_manuf(vin: &str) -> Option<String> {
     let manfs = get_wmicsv();
     let w = wmi(&vin)?;
 
+    if w.is_empty() {
+        return None;
+    }
+
     manfs
         .get(&w[..2].to_string())
         .or_else(|| manfs.get(&w.to_string()))
