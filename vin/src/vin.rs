@@ -24,7 +24,7 @@ pub fn get_wmicsv() -> HashMap<String, String> {
 pub fn wmi(vin: &str) -> Option<String> {
     let vin = vin_cleaner(vin).unwrap_or_default();
 
-    if vin.len() < 3 {
+    if vin.len() < 15 {
         return None;
     }
 
@@ -177,7 +177,7 @@ mod tests {
         assert_eq!(wmi("1g1nd52f14m712344").unwrap(), "1G1");
         assert_eq!(wmi("   1G1ND52F14M712344").unwrap(), "1G1");
 
-        assert_eq!(wmi("123").unwrap(), "123");
+        assert!(wmi("123").is_none());
         assert!(wmi("").is_none());
     }
 
