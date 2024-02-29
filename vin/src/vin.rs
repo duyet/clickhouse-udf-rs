@@ -43,16 +43,17 @@ pub fn wmi(vin: &str) -> Option<String> {
 pub fn vin_manuf(vin: &str) -> Option<String> {
     let vin = vin_cleaner(vin).unwrap_or_default();
     let manfs = get_wmicsv();
-    let w = wmi(&vin)?;
 
-    if w.is_empty() {
-        return None;
+    match wmi(&vin) {
+        Some(w) => match w.is_empty() {
+            true => None,
+            false => manfs
+                .get(&w[..2].to_string())
+                .or_else(|| manfs.get(&w.to_string()))
+                .cloned(),
+        },
+        None => None,
     }
-
-    manfs
-        .get(&w[..2].to_string())
-        .or_else(|| manfs.get(&w.to_string()))
-        .cloned()
 }
 
 pub fn vin_cleaner(vin: &str) -> Option<String> {
