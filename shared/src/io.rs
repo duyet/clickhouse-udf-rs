@@ -1,4 +1,4 @@
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 
 pub fn process_stdin(f: fn(&str) -> Option<String>) {
     let stdin = io::stdin();
@@ -11,5 +11,26 @@ pub fn process_stdin(f: fn(&str) -> Option<String>) {
 
         // Stdout
         println!("{}", output);
+    }
+}
+
+pub fn process_stdin_send_chunk_header(f: fn(&str) -> Option<String>) {
+    let stdin = io::stdin();
+
+    let mut lines = stdin.lock().lines();
+
+    // Read chunk length
+    while let Some(Ok(line)) = lines.next() {
+        let length: usize = line.trim().parse().expect("Failed to parse chunk length");
+
+        for _ in 0..length {
+            if let Some(Ok(line)) = lines.next() {
+                let output = f(&line).unwrap_or_default();
+                println!("{}", output);
+            }
+        }
+
+        // Flush stdout
+        io::stdout().flush().expect("Error flushing stdout");
     }
 }

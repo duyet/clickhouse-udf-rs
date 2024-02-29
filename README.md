@@ -39,7 +39,7 @@ file name must be matched `*_function.xml`).
     <!-- WKT -->
     <function>
         <name>readWktLineString</name>
-        <type>executable</type>
+        <type>executable_pool</type>
         <return_type>Array(Point)</return_type>
         <argument>
             <type>String</type>
@@ -52,7 +52,7 @@ file name must be matched `*_function.xml`).
     <!-- VIN -->
     <function>
         <name>vinCleaner</name>
-        <type>executable</type>
+        <type>executable_pool</type>
         <command>vin-cleaner</command>
         <format>TabSeparated</format>
         <argument>
@@ -63,7 +63,7 @@ file name must be matched `*_function.xml`).
     </function>
     <function>
         <name>vinYear</name>
-        <type>executable</type>
+        <type>executable_pool</type>
         <command>vin-year</command>
         <format>TabSeparated</format>
         <argument>
@@ -74,9 +74,10 @@ file name must be matched `*_function.xml`).
     </function>
     <function>
         <name>vinManuf</name>
-        <type>executable</type>
+        <type>executable_pool</type>
         <format>TabSeparated</format>
-        <command>vin-manuf</command>
+        <command>vin-manuf-chunk-header</command>
+        <send_chunk_header>1</send_chunk_header>
         <argument>
             <type>String</type>
             <name>value</name>
@@ -87,7 +88,7 @@ file name must be matched `*_function.xml`).
     <!-- URL -->
     <function>
         <name>extractUrl</name>
-        <type>executable</type>
+        <type>executable_pool</type>
         <format>TabSeparated</format>
         <command>extract-url</command>
         <argument>
@@ -98,7 +99,7 @@ file name must be matched `*_function.xml`).
     </function>
     <function>
         <name>hasUrl</name>
-        <type>executable</type>
+        <type>executable_pool</type>
         <format>TabSeparated</format>
         <command>has-url</command>
         <argument>

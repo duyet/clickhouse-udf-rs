@@ -8,12 +8,24 @@ name = "vin-cleaner"
 path = "src/bin/vin-cleaner.rs"
 
 [[bin]]
+name = "vin-cleaner-chunk-header"
+path = "src/bin/vin-cleaner-chunk-header.rs"
+
+[[bin]]
 name = "vin-year"
 path = "src/bin/vin-year.rs"
 
 [[bin]]
+name = "vin-year-chunk-header"
+path = "src/bin/vin-year-chunk-header.rs"
+
+[[bin]]
 name = "vin-manuf"
 path = "src/bin/vin-manuf.rs"
+
+[[bin]]
+name = "vin-manuf-chunk-header"
+path = "src/bin/vin-manuf-chunk-header.rs"
 
 [dependencies]
 anyhow = "1.0.80"
