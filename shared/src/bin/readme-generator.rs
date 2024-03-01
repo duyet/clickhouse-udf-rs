@@ -57,18 +57,12 @@ fn get_projects() -> Result<Vec<Project>> {
             .members
             .into_iter()
             .filter(|member| !IGNORED.contains(&member.as_str()))
-            .map(|ref member| {
-                let project = Project {
-                    name: member.to_string(),
-                    bins: get_bins(member.to_string()).unwrap_or_default(),
-                };
-
-                project
+            .map(|ref member| Project {
+                name: member.to_string(),
+                bins: get_bins(member.to_string()).unwrap_or_default(),
             })
             .collect::<Vec<_>>()),
-        None => {
-            return Err(anyhow!("No workspace found"));
-        }
+        None => Err(anyhow!("No workspace found")),
     }
 }
 
