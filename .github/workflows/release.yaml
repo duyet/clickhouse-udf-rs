@@ -46,6 +46,7 @@ jobs:
   update-readme:
     name: update README.md
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - uses: actions/checkout@master
@@ -54,7 +55,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
         run: |
-          cargo run --bin generate-readme . > README.md
+          cargo run --bin readme-generator . > README.md
 
       - uses: EndBug/add-and-commit@v9
         with:
