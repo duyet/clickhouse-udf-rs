@@ -70,7 +70,10 @@ fn get_tera_context() -> Result<Context> {
     let mut context = Context::new();
 
     // TODO: Binding the latest version from Cargo.toml
-    context.insert("version", "0.1.5");
+    let version = std::env::var("RELEASE_VERSION").unwrap_or_else(|_| "<version>".to_string());
+    // v0.1.0 -> 0.1.0
+    let version = version.trim_start_matches('v');
+    context.insert("version", &version);
 
     // Binding a list of projects
     let projects = get_projects()?;
