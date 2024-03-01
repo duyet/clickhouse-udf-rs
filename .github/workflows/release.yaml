@@ -64,3 +64,4 @@ jobs:
           author_email: duyetbot@users.noreply.github.com
           default_author: user_info
           message: "chore(docs): update README.md [skip ci]"
+          new_branch: master
