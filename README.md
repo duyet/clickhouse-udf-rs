@@ -5,153 +5,421 @@ Collection of some useful UDFs for ClickHouse written in Rust.
 Compile into binary
 
 ```bash
-cargo build --release
+$ cargo build --release
 
-ls -lhp target/release | grep -v '/\|\.d'
+$ ls -lhp target/release | grep -v '/\|\.d'
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 read-wkt-linestring
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-cleaner
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-cleaner-chunk-header
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-manuf
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-manuf-chunk-header
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-year
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-year-chunk-header
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-url
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 has-url
--rwxr-xr-x    1 duet  staff   515K Feb 22 23:57 read-wkt-linestring
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 string-format
--rwxr-xr-x    1 duet  staff   2.3M Feb 22 23:25 vin-cleaner
--rwxr-xr-x    1 duet  staff   2.3M Feb 22 23:25 vin-manuf
--rwxr-xr-x    1 duet  staff   2.3M Feb 22 23:25 vin-year
+
 ```
 
-### 1. Put the binaries into `user_scripts` folder
-
-Binary file inside `user_scripts` folder (`/var/lib/clickhouse/user_scripts/` with default path settings).
-
-```bash
-cp target/release/vin* /var/lib/clickhouse/user_scripts/
-cp target/release/*wkt* /var/lib/clickhouse/user_scripts/
-cp target/release/*url* /var/lib/clickhouse/user_scripts/
-cp target/release/*string* /var/lib/clickhouse/user_scripts/
-```
-
-### 2. Creating UDF using XML configuration
-
-File `custom_udf_function.xml` (`/etc/clickhouse-server/custom_udf_function.xml` with default path settings,
-file name must be matched `*_function.xml`).
+1. [wkt](#1-wkt)
+2. [vin](#2-vin)
+3. [url](#3-url)
 
 
-```xml
-<functions>
-    <!-- WKT -->
+# Usage
+
+## 1. `wkt`
+
+
+<details>
+  <summary>
+    Put the <strong>wkt</strong> binaries into <code>user_scripts</code> folder (<code>/var/lib/clickhouse/user_scripts/</code> with default path settings).
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.5/clickhouse_udf_wkt_v0.1.5_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_wkt_v0.1.5_x86_64-unknown-linux-musl.tar.gz
+
+  read-wkt-linestring
+  
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_wkt_function.xml</code>
+  </summary>
+
+  define udf config file `wkt_udf_function.xml` (`/etc/clickhouse-server/custom_udf_wkt_function.xml` with default path settings,
+  file name must be matched `*_function.xml`).
+
+
+  ```xml
+  <functions>
+    <!-- wkt -->
     <function>
-        <name>readWktLineString</name>
+        <name>readWktLinestring</name>
         <type>executable_pool</type>
-        <return_type>Array(Point)</return_type>
+        <command>read-wkt-linestring</command>
+        <format>tabseparated</format>
         <argument>
-            <type>String</type>
+            <type>string</type>
             <name>value</name>
         </argument>
-        <format>TabSeparated</format>
-        <command>read-wkt-linestring</command>
+        <return_type>string</return_type>
     </function>
+  </functions>
+  ```
+</details>
 
-    <!-- VIN -->
+<details>
+  <summary>With <code>send_chunk_header=1</code></summary>
+
+  ```xml
+  <functions>
+      <!-- wkt -->
+      <function>
+          <name>readWktLinestring</name>
+          <type>executable_pool</type>
+
+          <command>read-wkt-linestring-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      </functions>
+  ```
+
+</details>
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  SELECT readWktLinestring('value');
+  ```
+</details>
+
+## 2. `vin`
+
+
+<details>
+  <summary>
+    Put the <strong>vin</strong> binaries into <code>user_scripts</code> folder (<code>/var/lib/clickhouse/user_scripts/</code> with default path settings).
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.5/clickhouse_udf_vin_v0.1.5_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_vin_v0.1.5_x86_64-unknown-linux-musl.tar.gz
+
+  vin-cleaner
+  vin-cleaner-chunk-header
+  vin-manuf
+  vin-manuf-chunk-header
+  vin-year
+  vin-year-chunk-header
+  
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_vin_function.xml</code>
+  </summary>
+
+  define udf config file `vin_udf_function.xml` (`/etc/clickhouse-server/custom_udf_vin_function.xml` with default path settings,
+  file name must be matched `*_function.xml`).
+
+
+  ```xml
+  <functions>
+    <!-- vin -->
     <function>
         <name>vinCleaner</name>
         <type>executable_pool</type>
         <command>vin-cleaner</command>
-        <format>TabSeparated</format>
+        <format>tabseparated</format>
         <argument>
-            <type>String</type>
+            <type>string</type>
             <name>value</name>
         </argument>
-        <return_type>String</return_type>
-    </function>
-    <function>
+        <return_type>string</return_type>
+    </function><function>
+        <name>vinCleanerChunkHeader</name>
+        <type>executable_pool</type>
+        <command>vin-cleaner-chunk-header</command>
+        <format>tabseparated</format>
+        <argument>
+            <type>string</type>
+            <name>value</name>
+        </argument>
+        <return_type>string</return_type>
+    </function><function>
+        <name>vinManuf</name>
+        <type>executable_pool</type>
+        <command>vin-manuf</command>
+        <format>tabseparated</format>
+        <argument>
+            <type>string</type>
+            <name>value</name>
+        </argument>
+        <return_type>string</return_type>
+    </function><function>
+        <name>vinManufChunkHeader</name>
+        <type>executable_pool</type>
+        <command>vin-manuf-chunk-header</command>
+        <format>tabseparated</format>
+        <argument>
+            <type>string</type>
+            <name>value</name>
+        </argument>
+        <return_type>string</return_type>
+    </function><function>
         <name>vinYear</name>
         <type>executable_pool</type>
         <command>vin-year</command>
-        <format>TabSeparated</format>
+        <format>tabseparated</format>
         <argument>
-            <type>String</type>
+            <type>string</type>
             <name>value</name>
         </argument>
-        <return_type>String</return_type>
-    </function>
-    <function>
-        <name>vinManuf</name>
+        <return_type>string</return_type>
+    </function><function>
+        <name>vinYearChunkHeader</name>
         <type>executable_pool</type>
-        <format>TabSeparated</format>
-        <command>vin-manuf-chunk-header</command>
-        <send_chunk_header>1</send_chunk_header>
+        <command>vin-year-chunk-header</command>
+        <format>tabseparated</format>
         <argument>
-            <type>String</type>
+            <type>string</type>
             <name>value</name>
         </argument>
-        <return_type>String</return_type>
+        <return_type>string</return_type>
     </function>
+  </functions>
+  ```
+</details>
 
-    <!-- URL -->
+<details>
+  <summary>With <code>send_chunk_header=1</code></summary>
+
+  ```xml
+  <functions>
+      <!-- vin -->
+      <function>
+          <name>vinCleaner</name>
+          <type>executable_pool</type>
+
+          <command>vin-cleaner-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      <function>
+          <name>vinCleanerChunkHeader</name>
+          <type>executable_pool</type>
+
+          <command>vin-cleaner-chunk-header-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      <function>
+          <name>vinManuf</name>
+          <type>executable_pool</type>
+
+          <command>vin-manuf-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      <function>
+          <name>vinManufChunkHeader</name>
+          <type>executable_pool</type>
+
+          <command>vin-manuf-chunk-header-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      <function>
+          <name>vinYear</name>
+          <type>executable_pool</type>
+
+          <command>vin-year-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      <function>
+          <name>vinYearChunkHeader</name>
+          <type>executable_pool</type>
+
+          <command>vin-year-chunk-header-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      </functions>
+  ```
+
+</details>
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  SELECT vinCleaner('value');
+  SELECT vinCleanerChunkHeader('value');
+  SELECT vinManuf('value');
+  SELECT vinManufChunkHeader('value');
+  SELECT vinYear('value');
+  SELECT vinYearChunkHeader('value');
+  ```
+</details>
+
+## 3. `url`
+
+
+<details>
+  <summary>
+    Put the <strong>url</strong> binaries into <code>user_scripts</code> folder (<code>/var/lib/clickhouse/user_scripts/</code> with default path settings).
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.5/clickhouse_udf_url_v0.1.5_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_url_v0.1.5_x86_64-unknown-linux-musl.tar.gz
+
+  extract-url
+  has-url
+  
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_url_function.xml</code>
+  </summary>
+
+  define udf config file `url_udf_function.xml` (`/etc/clickhouse-server/custom_udf_url_function.xml` with default path settings,
+  file name must be matched `*_function.xml`).
+
+
+  ```xml
+  <functions>
+    <!-- url -->
     <function>
         <name>extractUrl</name>
         <type>executable_pool</type>
-        <format>TabSeparated</format>
         <command>extract-url</command>
+        <format>tabseparated</format>
         <argument>
-            <type>String</type>
+            <type>string</type>
             <name>value</name>
         </argument>
-        <return_type>String</return_type>
-    </function>
-    <function>
+        <return_type>string</return_type>
+    </function><function>
         <name>hasUrl</name>
         <type>executable_pool</type>
-        <format>TabSeparated</format>
         <command>has-url</command>
+        <format>tabseparated</format>
         <argument>
-            <type>String</type>
+            <type>string</type>
             <name>value</name>
         </argument>
-        <return_type>Boolean</return_type>
+        <return_type>string</return_type>
     </function>
-</functions>
-```
+  </functions>
+  ```
+</details>
 
-### 3. Query
+<details>
+  <summary>With <code>send_chunk_header=1</code></summary>
 
-```sql
-SELECT
-    readWktLineString('LINESTRING(1 1, 2 2)') AS ls,
-    toTypeName(ls)
+  ```xml
+  <functions>
+      <!-- url -->
+      <function>
+          <name>extractUrl</name>
+          <type>executable_pool</type>
 
-Query id: acf46ce7-c782-469c-9f13-dc4adffa69cc
+          <command>extract-url-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
 
-┌─ls────────────┬─toTypeName(readWktLineString('LINESTRING(1 1, 2 2)'))─┐
-│ [(1,1),(2,2)] │ Array(Point)                                          │
-└───────────────┴───────────────────────────────────────────────────────┘
-```
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      <function>
+          <name>hasUrl</name>
+          <type>executable_pool</type>
+
+          <command>has-url-chunk-header</command>
+          <send_chunk_header>1</send_chunk_header>
+
+          <format>TabSeparated</format>
+          <argument>
+              <type>String</type>
+              <name>value</name>
+          </argument>
+          <return_type>String</return_type>
+      </function>
+      </functions>
+  ```
+
+</details>
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  SELECT extractUrl('value');
+  SELECT hasUrl('value');
+  ```
+</details>
 
 
-```sql
-SELECT vinCleaner('AHTEB6CB802500000 (abc)');
 
-┌─vinCleaner('AHTEB6CB802500000 (abc)')─┐
-│ AHTEB6CB802500000                     │
-└───────────────────────────────────────┘
+# License
 
-SELECT
-    vinYear('1GKKRNED9EJ260000') AS year,
-    vinManuf('1GKKRNED9EJ260000') AS manuf
+MIT
 
-Query id: 429dfa20-f658-4c98-ba1d-f0b7fc2648a8
-
-┌─year─┬─manuf──────────────┐
-│ 2014 │ General Motors USA │
-└──────┴────────────────────┘
-```
-
-```sql
-SELECT
-    extractUrl('abc https://duyet.net def') AS u,
-    hasUrl('is this contains url https://duyet.net ?')
-
-Query id: 5840589f-2f8f-4213-ab44-dba8bdb46a29
-
-┌─u─────────────────┬─hasUrl('is this contains url https://duyet.net ?')─┐
-│ https://duyet.net │ true                                               │
-└───────────────────┴────────────────────────────────────────────────────┘
-```

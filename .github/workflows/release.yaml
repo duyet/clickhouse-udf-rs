@@ -42,3 +42,24 @@ jobs:
           ARCHIVE_NAME: clickhouse_udf_${{ matrix.src_dir }}_${{ github.ref_name }}_${{ matrix.target }}
           SRC_DIR: ${{ matrix.src_dir }}
           MINIFY: "yes"
+
+  update-readme:
+    name: update README.md
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Generate README.md
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          cargo run --bin generate-readme . > README.md
+
+      - uses: EndBug/add-and-commit@v9
+        with:
+          add: README.md
+          author_name: duyetbot
+          author_email: duyetbot@users.noreply.github.com
+          default_author: user_info
+          message: "chore(docs): update README.md [skip ci]"
