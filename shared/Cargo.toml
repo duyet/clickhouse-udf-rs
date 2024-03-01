@@ -5,5 +5,13 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "readme-generator"
+path = "src/bin/readme-generator.rs"
+
 [dependencies]
 anyhow = "1.0.80"
+cargo_toml = "0.19.1"
+change-case = "0.2.0"
+serde = { version = "^1", features = ["derive"] }
+tera = "1.19.1"
