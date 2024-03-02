@@ -53,6 +53,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <functions>
     <!-- {{ project.name }} -->
     {% for bin in project.bins -%}
+    {% if bin is ending_with("-chunk-header") %}{% continue %}{% endif -%}
     <function>
         <name>{{ bin | to_clickhouse_function }}</name>
         <type>executable_pool</type>
@@ -64,23 +65,24 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         </argument>
         <return_type>string</return_type>
     </function>
-    {%- endfor %}
+    {% endfor %}
   </functions>
   ```
 </details>
 
 <details>
-  <summary>With <code>send_chunk_header=1</code></summary>
+  <summary>UDF config with <code>{{ "<send_chunk_header>1</send_chunk_header>" | escape }}</code></summary>
 
   ```xml
   <functions>
       <!-- {{ project.name }} -->
       {% for bin in project.bins -%}
+      {% if bin is not ending_with("-chunk-header") %}{% continue %}{% endif %}
       <function>
-          <name>{{ bin | to_clickhouse_function }}</name>
+          <name>{{ bin | trim_end_matches(pat="-chunk-header") | to_clickhouse_function }}</name>
           <type>executable_pool</type>
 
-          <command>{{ bin }}-chunk-header</command>
+          <command>{{ bin }}</command>
           <send_chunk_header>1</send_chunk_header>
 
           <format>TabSeparated</format>
@@ -101,6 +103,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```sql
   {% for bin in project.bins -%}
+  {% if bin is ending_with("-chunk-header") %}{% continue %}{% endif -%}
   SELECT {{ bin | to_clickhouse_function }}('value');
   {% endfor -%}
   ```

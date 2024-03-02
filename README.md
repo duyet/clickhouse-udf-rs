@@ -37,8 +37,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.6/clickhouse_udf_wkt_v0.1.6_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_wkt_v0.1.6_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   read-wkt-linestring
   
@@ -68,30 +68,17 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         </argument>
         <return_type>string</return_type>
     </function>
+    
   </functions>
   ```
 </details>
 
 <details>
-  <summary>With <code>send_chunk_header=1</code></summary>
+  <summary>UDF config with <code>&lt;send_chunk_header&gt;1&lt;&#x2F;send_chunk_header&gt;</code></summary>
 
   ```xml
   <functions>
       <!-- wkt -->
-      <function>
-          <name>readWktLinestring</name>
-          <type>executable_pool</type>
-
-          <command>read-wkt-linestring-chunk-header</command>
-          <send_chunk_header>1</send_chunk_header>
-
-          <format>TabSeparated</format>
-          <argument>
-              <type>String</type>
-              <name>value</name>
-          </argument>
-          <return_type>String</return_type>
-      </function>
       </functions>
   ```
 
@@ -115,8 +102,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.6/clickhouse_udf_vin_v0.1.6_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_vin_v0.1.6_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   vin-cleaner
   vin-cleaner-chunk-header
@@ -150,17 +137,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
             <name>value</name>
         </argument>
         <return_type>string</return_type>
-    </function><function>
-        <name>vinCleanerChunkHeader</name>
-        <type>executable_pool</type>
-        <command>vin-cleaner-chunk-header</command>
-        <format>tabseparated</format>
-        <argument>
-            <type>string</type>
-            <name>value</name>
-        </argument>
-        <return_type>string</return_type>
-    </function><function>
+    </function>
+    <function>
         <name>vinManuf</name>
         <type>executable_pool</type>
         <command>vin-manuf</command>
@@ -170,17 +148,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
             <name>value</name>
         </argument>
         <return_type>string</return_type>
-    </function><function>
-        <name>vinManufChunkHeader</name>
-        <type>executable_pool</type>
-        <command>vin-manuf-chunk-header</command>
-        <format>tabseparated</format>
-        <argument>
-            <type>string</type>
-            <name>value</name>
-        </argument>
-        <return_type>string</return_type>
-    </function><function>
+    </function>
+    <function>
         <name>vinYear</name>
         <type>executable_pool</type>
         <command>vin-year</command>
@@ -190,27 +159,19 @@ $ ls -lhp target/release | grep -v '/\|\.d'
             <name>value</name>
         </argument>
         <return_type>string</return_type>
-    </function><function>
-        <name>vinYearChunkHeader</name>
-        <type>executable_pool</type>
-        <command>vin-year-chunk-header</command>
-        <format>tabseparated</format>
-        <argument>
-            <type>string</type>
-            <name>value</name>
-        </argument>
-        <return_type>string</return_type>
     </function>
+    
   </functions>
   ```
 </details>
 
 <details>
-  <summary>With <code>send_chunk_header=1</code></summary>
+  <summary>UDF config with <code>&lt;send_chunk_header&gt;1&lt;&#x2F;send_chunk_header&gt;</code></summary>
 
   ```xml
   <functions>
       <!-- vin -->
+      
       <function>
           <name>vinCleaner</name>
           <type>executable_pool</type>
@@ -225,20 +186,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
           </argument>
           <return_type>String</return_type>
       </function>
-      <function>
-          <name>vinCleanerChunkHeader</name>
-          <type>executable_pool</type>
-
-          <command>vin-cleaner-chunk-header-chunk-header</command>
-          <send_chunk_header>1</send_chunk_header>
-
-          <format>TabSeparated</format>
-          <argument>
-              <type>String</type>
-              <name>value</name>
-          </argument>
-          <return_type>String</return_type>
-      </function>
+      
       <function>
           <name>vinManuf</name>
           <type>executable_pool</type>
@@ -253,39 +201,12 @@ $ ls -lhp target/release | grep -v '/\|\.d'
           </argument>
           <return_type>String</return_type>
       </function>
-      <function>
-          <name>vinManufChunkHeader</name>
-          <type>executable_pool</type>
-
-          <command>vin-manuf-chunk-header-chunk-header</command>
-          <send_chunk_header>1</send_chunk_header>
-
-          <format>TabSeparated</format>
-          <argument>
-              <type>String</type>
-              <name>value</name>
-          </argument>
-          <return_type>String</return_type>
-      </function>
+      
       <function>
           <name>vinYear</name>
           <type>executable_pool</type>
 
           <command>vin-year-chunk-header</command>
-          <send_chunk_header>1</send_chunk_header>
-
-          <format>TabSeparated</format>
-          <argument>
-              <type>String</type>
-              <name>value</name>
-          </argument>
-          <return_type>String</return_type>
-      </function>
-      <function>
-          <name>vinYearChunkHeader</name>
-          <type>executable_pool</type>
-
-          <command>vin-year-chunk-header-chunk-header</command>
           <send_chunk_header>1</send_chunk_header>
 
           <format>TabSeparated</format>
@@ -305,11 +226,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```sql
   SELECT vinCleaner('value');
-  SELECT vinCleanerChunkHeader('value');
   SELECT vinManuf('value');
-  SELECT vinManufChunkHeader('value');
   SELECT vinYear('value');
-  SELECT vinYearChunkHeader('value');
   ```
 </details>
 
@@ -323,8 +241,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.6/clickhouse_udf_url_v0.1.6_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_url_v0.1.6_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   extract-url
   has-url
@@ -354,7 +272,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
             <name>value</name>
         </argument>
         <return_type>string</return_type>
-    </function><function>
+    </function>
+    <function>
         <name>hasUrl</name>
         <type>executable_pool</type>
         <command>has-url</command>
@@ -365,44 +284,17 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         </argument>
         <return_type>string</return_type>
     </function>
+    
   </functions>
   ```
 </details>
 
 <details>
-  <summary>With <code>send_chunk_header=1</code></summary>
+  <summary>UDF config with <code>&lt;send_chunk_header&gt;1&lt;&#x2F;send_chunk_header&gt;</code></summary>
 
   ```xml
   <functions>
       <!-- url -->
-      <function>
-          <name>extractUrl</name>
-          <type>executable_pool</type>
-
-          <command>extract-url-chunk-header</command>
-          <send_chunk_header>1</send_chunk_header>
-
-          <format>TabSeparated</format>
-          <argument>
-              <type>String</type>
-              <name>value</name>
-          </argument>
-          <return_type>String</return_type>
-      </function>
-      <function>
-          <name>hasUrl</name>
-          <type>executable_pool</type>
-
-          <command>has-url-chunk-header</command>
-          <send_chunk_header>1</send_chunk_header>
-
-          <format>TabSeparated</format>
-          <argument>
-              <type>String</type>
-              <name>value</name>
-          </argument>
-          <return_type>String</return_type>
-      </function>
       </functions>
   ```
 
