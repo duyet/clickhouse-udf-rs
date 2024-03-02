@@ -13,5 +13,5 @@ path = "src/bin/readme-generator.rs"
 anyhow = "1.0.80"
 cargo_toml = "0.19.1"
 change-case = "0.2.0"
-serde = { version = "^1", features = ["derive"] }
+serde = { version = "^1.0.197", features = ["derive"] }
 tera = "1.19.1"
