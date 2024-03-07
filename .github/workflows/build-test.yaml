@@ -85,7 +85,7 @@ jobs:
     steps:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
-        id: report-artifact
+        id: bench-artifact
         with:
           name: bench
           pattern: bench-*
@@ -93,6 +93,7 @@ jobs:
       - name: Comment
         uses: peter-evans/create-or-update-comment@v4
         with:
+          token: ${{ secrets.DUYETBOT_GITHUB_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             Benches report: ${{ steps.bench-artifact.outputs.artifact-url }}
