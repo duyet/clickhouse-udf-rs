@@ -53,3 +53,26 @@ jobs:
           override: true
 
       - run: cargo test
+
+  bench:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macOS-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - run: cargo bench
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ matrix.build_type }}-${{ matrix.os }}
+          path: target/criterion
