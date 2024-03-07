@@ -631,6 +631,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "parse_wkt"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "geo-types",
+ "shared",
+ "wkt",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1332,16 +1343,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dffa400e67ed5a4dd237983829e66475f0a4a26938c4b04c21baede6262215b8"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "wkt"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "geo-types",
- "shared",
- "wkt 0.10.3",
 ]
 
 [[package]]
