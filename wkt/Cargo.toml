@@ -1,5 +1,5 @@
 [package]
-name = "wkt"
+name = "parse_wkt"
 version = "0.1.0"
 edition = "2021"
 authors = ["Duyet Le <me@duyet.net>"]
@@ -10,8 +10,15 @@ authors = ["Duyet Le <me@duyet.net>"]
 name = "read-wkt-linestring"
 path = "src/bin/read-wkt-linestring.rs"
 
+[[bench]]
+name = "wkt"
+harness = false
+
 [dependencies]
 anyhow = "1.0.80"
 geo-types = "0.7.13"
 shared = { path = "../shared" }
 wkt = "0.10.3"
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
