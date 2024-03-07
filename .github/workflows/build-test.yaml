@@ -76,3 +76,23 @@ jobs:
         with:
           name: bench-${{ matrix.build_type }}-${{ matrix.os }}
           path: target/criterion
+
+  merge-and-comment-bench-report:
+    runs-on: ubuntu-latest
+    needs: bench
+    if: ${{ github.event.pull_request.number }}
+
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        id: report-artifact
+        with:
+          name: bench
+          pattern: bench-*
+
+      - name: Comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Benches report: ${{ steps.bench-artifact.outputs.artifact-url }}
