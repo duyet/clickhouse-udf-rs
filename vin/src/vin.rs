@@ -80,7 +80,7 @@ pub fn vin_cleaner(vin: &str) -> Option<String> {
         }
     }
 
-    Some(vin.to_string())
+    None
 }
 
 pub fn vin_continent(vin: &str) -> Option<&'static str> {
@@ -339,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vin_cleaner_17() {
+    fn test_vin_cleaner() {
         assert_eq!(
             vin_cleaner("1G1ND52F14M712344").unwrap(),
             "1G1ND52F14M712344"
@@ -373,15 +373,45 @@ mod tests {
             vin_cleaner("1g1ND52F14m700000000").unwrap(),
             "1G1ND52F14M700000"
         );
-    }
-
-    #[test]
-    fn test_vin_cleaner_bad_input() {
         assert_eq!(
             vin_cleaner("JTFHX02PX00032390 (ijdfhsdfs)").unwrap(),
             "JTFHX02PX00032390"
         );
-        assert_eq!(vin_cleaner("123").unwrap(), "123");
+        assert_eq!(
+            vin_cleaner("JTFSX22P700000000NEW").unwrap(),
+            "JTFSX22P700000000"
+        );
+        assert_eq!(
+            vin_cleaner("JTFSX22P700000000 - NEW").unwrap(),
+            "JTFSX22P700000000"
+        );
+        assert_eq!(
+            vin_cleaner("JTFSX22P700000000.").unwrap(),
+            "JTFSX22P700000000"
+        );
+        assert_eq!(
+            vin_cleaner("JTFSX22P700000000-").unwrap(),
+            "JTFSX22P700000000"
+        );
+        assert_eq!(
+            vin_cleaner(":JTFSX22P700000000-").unwrap(),
+            "JTFSX22P700000000"
+        );
+        assert_eq!(
+            vin_cleaner("JTFSX22P700000000/RE").unwrap(),
+            "JTFSX22P700000000"
+        );
+        assert_eq!(
+            vin_cleaner("JTFSX22P700000000(MF)").unwrap(),
+            "JTFSX22P700000000"
+        );
+    }
+
+    #[test]
+    fn test_vin_cleaner_bad_input() {
+        assert!(vin_cleaner("123").is_none());
+        assert!(vin_cleaner("INVALID-123").is_none());
+        assert!(vin_cleaner("-").is_none());
         assert!(vin_cleaner("").is_none());
     }
 }
