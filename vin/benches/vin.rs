@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use vin::vin::{vin_cleaner, vin_manuf, vin_year};
 
 fn vin_cleaner_benchmark(c: &mut Criterion) {
-    let inputs = vec!["G1ND52F14M700000 (bla bla)", " this is long long long long long long input G1ND52F14M700000 and long long long extra things", "G1ND52F14M700000", "invalid", ""];
+    let inputs = ["G1ND52F14M700000 (bla bla)", " this is long long long long long long input G1ND52F14M700000 and long long long extra things", "G1ND52F14M700000", "invalid", ""];
 
     let mut group = c.benchmark_group("vin_cleaner");
     for input in inputs.iter() {
@@ -14,7 +14,7 @@ fn vin_cleaner_benchmark(c: &mut Criterion) {
 }
 
 fn vin_year_benchmark(c: &mut Criterion) {
-    let inputs = vec!["G1ND52F14M700000 (bla bla)", " this is long long long long long long input G1ND52F14M700000 and long long long extra things", "G1ND52F14M700000", "invalid", ""];
+    let inputs = ["G1ND52F14M700000 (bla bla)", " this is long long long long long long input G1ND52F14M700000 and long long long extra things", "G1ND52F14M700000", "invalid", ""];
 
     let mut group = c.benchmark_group("vin_year");
     for input in inputs.iter() {
@@ -26,7 +26,7 @@ fn vin_year_benchmark(c: &mut Criterion) {
 }
 
 fn vin_manuf_benchmark(c: &mut Criterion) {
-    let inputs = vec!["G1ND52F14M700000 (bla bla)", " this is long long long long long long input G1ND52F14M700000 and long long long extra things", "G1ND52F14M700000", "invalid", ""];
+    let inputs = ["G1ND52F14M700000 (bla bla)", " this is long long long long long long input G1ND52F14M700000 and long long long extra things", "G1ND52F14M700000", "invalid", ""];
 
     let mut group = c.benchmark_group("vin_manuf");
     for input in inputs.iter() {
