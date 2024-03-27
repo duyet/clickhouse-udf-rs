@@ -12,5 +12,5 @@ name = 'has-url'
 path = 'src/bin/has-url.rs'
 
 [dependencies]
-anyhow = "1.0.80"
+anyhow = "1.0.81"
 shared = { path = "../shared" }
