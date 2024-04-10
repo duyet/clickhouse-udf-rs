@@ -8,5 +8,5 @@ name = 'string-format'
 path = 'src/bin/string-format.rs'
 
 [dependencies]
-anyhow = "1.0.81"
+anyhow = "1.0.82"
 shared = { path = "../shared" }

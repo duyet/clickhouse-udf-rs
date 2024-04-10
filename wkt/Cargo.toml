@@ -15,7 +15,7 @@ name = "wkt"
 harness = false
 
 [dependencies]
-anyhow = "1.0.81"
+anyhow = "1.0.82"
 geo-types = "0.7.13"
 shared = { path = "../shared" }
 wkt = "0.10.3"
