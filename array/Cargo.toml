@@ -1,0 +1,18 @@
+[package]
+name = "array"
+version = "0.1.0"
+edition = "2021"
+authors = ["Duyet Le <me@duyet.net>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "array-topk"
+path = "src/bin/topk.rs"
+
+[dependencies]
+anyhow = "1.0.82"
+shared = { path = "../shared" }
+topk = "0.5.0"
+
+[dev-dependencies]

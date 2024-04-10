@@ -1,9 +1,10 @@
 use anyhow::Result;
 use shared::io::process_stdin;
+use std::boxed::Box;
 use vin::vin::vin_cleaner;
 
 fn main() -> Result<()> {
-    process_stdin(vin_cleaner);
+    process_stdin(Box::new(vin_cleaner));
 
     Ok(())
 }

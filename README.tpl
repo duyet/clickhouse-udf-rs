@@ -70,6 +70,12 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```
 </details>
 
+{% set_global count = 0 -%}
+{% for bin in project.bins -%}
+{% if bin is ending_with("-chunk-header") %}{% set_global count = count + 1 %}{% endif %}
+{% endfor -%}
+
+{% if count > 0 %}
 <details>
   <summary>UDF config with <code>{{ "<send_chunk_header>1</send_chunk_header>" | escape }}</code></summary>
 
@@ -97,6 +103,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```
 
 </details>
+{% endif %}
 
 <details>
   <summary>ClickHouse example queries</summary>

@@ -17,12 +17,14 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-year-chunk-header
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-url
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 has-url
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 array-topk
 
 ```
 
 1. [wkt](#1-wkt)
 2. [vin](#2-vin)
 3. [url](#3-url)
+4. [array](#4-array)
 
 
 # Usage
@@ -37,8 +39,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.7/clickhouse_udf_wkt_v0.1.7_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_wkt_v0.1.7_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   read-wkt-linestring
   
@@ -73,16 +75,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```
 </details>
 
-<details>
-  <summary>UDF config with <code>&lt;send_chunk_header&gt;1&lt;&#x2F;send_chunk_header&gt;</code></summary>
 
-  ```xml
-  <functions>
-      <!-- wkt -->
-      </functions>
-  ```
 
-</details>
 
 <details>
   <summary>ClickHouse example queries</summary>
@@ -102,8 +96,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.7/clickhouse_udf_vin_v0.1.7_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_vin_v0.1.7_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   vin-cleaner
   vin-cleaner-chunk-header
@@ -165,6 +159,13 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```
 </details>
 
+
+
+
+
+
+
+
 <details>
   <summary>UDF config with <code>&lt;send_chunk_header&gt;1&lt;&#x2F;send_chunk_header&gt;</code></summary>
 
@@ -221,6 +222,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
 </details>
 
+
 <details>
   <summary>ClickHouse example queries</summary>
 
@@ -241,8 +243,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.7/clickhouse_udf_url_v0.1.7_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_url_v0.1.7_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   extract-url
   has-url
@@ -289,16 +291,9 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```
 </details>
 
-<details>
-  <summary>UDF config with <code>&lt;send_chunk_header&gt;1&lt;&#x2F;send_chunk_header&gt;</code></summary>
 
-  ```xml
-  <functions>
-      <!-- url -->
-      </functions>
-  ```
 
-</details>
+
 
 <details>
   <summary>ClickHouse example queries</summary>
@@ -306,6 +301,63 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```sql
   SELECT extractUrl('value');
   SELECT hasUrl('value');
+  ```
+</details>
+
+## 4. `array`
+
+
+<details>
+  <summary>
+    Put the <strong>array</strong> binaries into <code>user_scripts</code> folder (<code>/var/lib/clickhouse/user_scripts/</code> with default path settings).
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_array_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_array_v<version>_x86_64-unknown-linux-musl.tar.gz
+
+  array-topk
+  
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_array_function.xml</code>
+  </summary>
+
+  define udf config file `array_udf_function.xml` (`/etc/clickhouse-server/custom_udf_array_function.xml` with default path settings,
+  file name must be matched `*_function.xml`).
+
+
+  ```xml
+  <functions>
+    <!-- array -->
+    <function>
+        <name>arrayTopk</name>
+        <type>executable_pool</type>
+        <command>array-topk</command>
+        <format>tabseparated</format>
+        <argument>
+            <type>string</type>
+            <name>value</name>
+        </argument>
+        <return_type>string</return_type>
+    </function>
+    
+  </functions>
+  ```
+</details>
+
+
+
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  SELECT arrayTopk('value');
   ```
 </details>
 
