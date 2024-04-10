@@ -71,11 +71,8 @@ name = "array"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "criterion",
- "geo-types",
  "shared",
  "topk",
- "wkt",
 ]
 
 [[package]]

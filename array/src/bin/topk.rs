@@ -1,21 +1,21 @@
 use anyhow::Result;
-use shared::io::{args, process_stdin};
+use shared::io::{args, process_stdin, ProcessFn};
 use std::boxed::Box;
 use topk::FilteredSpaceSaving;
 
-fn topk_fn(k: usize) -> Box<dyn Fn(&str) -> Option<String>> {
+fn topk_fn(k: usize) -> ProcessFn {
     Box::new(move |s| -> Option<String> {
-        if k.clone() == 0 {
+        if k == 0 {
             return Some("[]".to_string());
         }
 
         // s = [1,2,3.4]
         let array = s
-            .split(",")
+            .split(',')
             .map(|i| i.trim_start_matches('[').trim_end_matches(']').trim())
             .collect::<Vec<&str>>();
 
-        if array.len() == 0 {
+        if array.is_empty() {
             return Some("[]".to_string());
         }
 
@@ -32,7 +32,7 @@ fn topk_fn(k: usize) -> Box<dyn Fn(&str) -> Option<String>> {
 }
 
 fn main() -> Result<()> {
-    let k = match args().get(0) {
+    let k = match args().first() {
         Some(k) => k.parse::<usize>()?,
         None => 0,
     };

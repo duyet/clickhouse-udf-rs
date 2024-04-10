@@ -1,11 +1,13 @@
 use std::io::{self, BufRead, Write};
 
+pub type ProcessFn = Box<dyn Fn(&str) -> Option<String>>;
+
 pub fn args() -> Vec<String> {
     let args: Vec<String> = std::env::args().collect();
     args[1..].to_vec()
 }
 
-pub fn process_stdin(f: Box<dyn Fn(&str) -> Option<String>>) {
+pub fn process_stdin(f: ProcessFn) {
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         // Getting input from stdin line
@@ -19,7 +21,7 @@ pub fn process_stdin(f: Box<dyn Fn(&str) -> Option<String>>) {
     }
 }
 
-pub fn process_stdin_send_chunk_header(f: Box<dyn Fn(&str) -> Option<String>>) {
+pub fn process_stdin_send_chunk_header(f: ProcessFn) {
     let stdin = io::stdin();
 
     let mut lines = stdin.lock().lines();

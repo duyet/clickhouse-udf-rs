@@ -10,16 +10,9 @@ authors = ["Duyet Le <me@duyet.net>"]
 name = "array-topk"
 path = "src/bin/topk.rs"
 
-[[bench]]
-name = "topk"
-harness = false
-
 [dependencies]
 anyhow = "1.0.82"
-geo-types = "0.7.13"
 shared = { path = "../shared" }
 topk = "0.5.0"
-wkt = "0.10.3"
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
