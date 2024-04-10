@@ -4,10 +4,16 @@ use std::path::Path;
 use std::{collections::HashMap, env};
 use tera::{Context, Tera};
 
+#[derive(Serialize, Debug)]
+struct Bin {
+    name: String,
+    path: String,
+}
+
 #[derive(Serialize)]
 struct Project {
     name: String,
-    bins: Vec<String>,
+    bins: Vec<Bin>,
 }
 
 const IGNORED: [&str; 2] = ["shared", "string"];
@@ -27,7 +33,7 @@ impl tera::Filter for ToClickHouseFunctionName {
     }
 }
 
-fn get_bins(member: String) -> Result<Vec<String>> {
+fn get_bins(member: String) -> Result<Vec<Bin>> {
     let child_path = format!("{}/Cargo.toml", member);
 
     let mut manifest = cargo_toml::Manifest::from_path(Path::new(&child_path))?;
@@ -36,7 +42,10 @@ fn get_bins(member: String) -> Result<Vec<String>> {
     let bins = manifest
         .bin
         .into_iter()
-        .map(|bin| bin.name.unwrap_or_default())
+        .map(|bin| Bin {
+            name: bin.name.unwrap_or_default(),
+            path: bin.path.unwrap_or_default(),
+        })
         .collect::<Vec<_>>();
 
     dbg!(&bins);

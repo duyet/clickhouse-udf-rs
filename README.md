@@ -63,7 +63,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>readWktLinestring</name>
         <type>executable_pool</type>
         <command>read-wkt-linestring</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
@@ -125,7 +125,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>vinCleaner</name>
         <type>executable_pool</type>
         <command>vin-cleaner</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
@@ -136,7 +136,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>vinManuf</name>
         <type>executable_pool</type>
         <command>vin-manuf</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
@@ -147,7 +147,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>vinYear</name>
         <type>executable_pool</type>
         <command>vin-year</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
@@ -268,7 +268,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>extractUrl</name>
         <type>executable_pool</type>
         <command>extract-url</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
@@ -279,7 +279,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>hasUrl</name>
         <type>executable_pool</type>
         <command>has-url</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
@@ -338,7 +338,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>arrayTopk</name>
         <type>executable_pool</type>
         <command>array-topk</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
             <type>string</type>
             <name>value</name>
