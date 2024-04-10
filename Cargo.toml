@@ -1,5 +1,5 @@
 [workspace]
-members = ["wkt", "vin", "shared", "url", "string"]
+members = ["wkt", "vin", "shared", "url", "string", "array"]
 resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

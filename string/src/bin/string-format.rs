@@ -1,5 +1,6 @@
 use anyhow::Result;
 use shared::io::process_stdin;
+use std::boxed::Box;
 
 fn string_format(s: &str) -> Option<String> {
     let args = s.split('\t').collect::<Vec<&str>>();
@@ -19,7 +20,7 @@ fn string_format(s: &str) -> Option<String> {
 }
 
 fn main() -> Result<()> {
-    process_stdin(string_format);
+    process_stdin(Box::new(string_format));
 
     Ok(())
 }
