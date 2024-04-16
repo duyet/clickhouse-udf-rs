@@ -9,7 +9,7 @@ $ cargo build --release
 
 $ ls -lhp target/release | grep -v '/\|\.d'
 {% for project in projects -%}{% for bin in project.bins -%}
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 {{ bin}}
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 {{ bin.name }}
 {% endfor %}{% endfor %}
 ```
 
@@ -35,7 +35,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   $ tar zxvf clickhouse_udf_{{ project.name }}_v{{ version }}_x86_64-unknown-linux-musl.tar.gz
 
   {% for bin in project.bins -%}
-  {{ bin }}
+  {{ bin.name }}
   {% endfor %}
   ```
 </details>
@@ -53,17 +53,17 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <functions>
     <!-- {{ project.name }} -->
     {% for bin in project.bins -%}
-    {% if bin is ending_with("-chunk-header") %}{% continue %}{% endif -%}
+    {% if bin.name is ending_with("-chunk-header") %}{% continue %}{% endif -%}
     <function>
-        <name>{{ bin | to_clickhouse_function }}</name>
+        <name>{{ bin.udf_name }}</name>
         <type>executable_pool</type>
-        <command>{{ bin }}</command>
-        <format>tabseparated</format>
+        <command>{{ bin.name }}</command>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     {% endfor %}
   </functions>
@@ -72,7 +72,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
 {% set_global count = 0 -%}
 {% for bin in project.bins -%}
-{% if bin is ending_with("-chunk-header") %}{% set_global count = count + 1 %}{% endif %}
+{% if bin.name is ending_with("-chunk-header") %}{% set_global count = count + 1 %}{% endif %}
 {% endfor -%}
 
 {% if count > 0 %}
@@ -83,12 +83,12 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <functions>
       <!-- {{ project.name }} -->
       {% for bin in project.bins -%}
-      {% if bin is not ending_with("-chunk-header") %}{% continue %}{% endif %}
+      {% if bin.name is not ending_with("-chunk-header") %}{% continue %}{% endif %}
       <function>
-          <name>{{ bin | trim_end_matches(pat="-chunk-header") | to_clickhouse_function }}</name>
+          <name>{{ bin.udf_name }}</name>
           <type>executable_pool</type>
 
-          <command>{{ bin }}</command>
+          <command>{{ bin.name }}</command>
           <send_chunk_header>1</send_chunk_header>
 
           <format>TabSeparated</format>
@@ -109,9 +109,11 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <summary>ClickHouse example queries</summary>
 
   ```sql
-  {% for bin in project.bins -%}
-  {% if bin is ending_with("-chunk-header") %}{% continue %}{% endif -%}
-  SELECT {{ bin | to_clickhouse_function }}('value');
+  {%- for bin in project.bins -%}
+  {%- if bin.name is ending_with("-chunk-header") %}{% continue %}{% endif -%}
+  {%- for usage in bin.usages %}
+  {{ usage -}}
+  {% endfor %}
   {% endfor -%}
   ```
 </details>

@@ -39,8 +39,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_wkt_v0.1.8_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_wkt_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   read-wkt-linestring
   
@@ -60,15 +60,15 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <functions>
     <!-- wkt -->
     <function>
-        <name>readWktLinestring</name>
+        <name>readWktLineString</name>
         <type>executable_pool</type>
         <command>read-wkt-linestring</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     
   </functions>
@@ -82,7 +82,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <summary>ClickHouse example queries</summary>
 
   ```sql
-  SELECT readWktLinestring('value');
+  SELECT readWktLineString("LINESTRING (30 10, 10 30, 40 40)")
   ```
 </details>
 
@@ -96,8 +96,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_vin_v0.1.8_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_vin_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   vin-cleaner
   vin-cleaner-chunk-header
@@ -125,34 +125,34 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>vinCleaner</name>
         <type>executable_pool</type>
         <command>vin-cleaner</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     <function>
         <name>vinManuf</name>
         <type>executable_pool</type>
         <command>vin-manuf</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     <function>
         <name>vinYear</name>
         <type>executable_pool</type>
         <command>vin-year</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     
   </functions>
@@ -227,9 +227,12 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <summary>ClickHouse example queries</summary>
 
   ```sql
-  SELECT vinCleaner('value');
-  SELECT vinManuf('value');
-  SELECT vinYear('value');
+  SELECT vinCleaner("1G1JC1249Y7150000")
+  SELECT vinCleaner("1G1JC1249Y7150000 ...")
+  
+  SELECT vinManuf("1G1JC1249Y7150000")
+  
+  SELECT vinYear("1G1JC1249Y7150000")
   ```
 </details>
 
@@ -243,8 +246,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_url_v0.1.8_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_url_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   extract-url
   has-url
@@ -268,23 +271,23 @@ $ ls -lhp target/release | grep -v '/\|\.d'
         <name>extractUrl</name>
         <type>executable_pool</type>
         <command>extract-url</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     <function>
         <name>hasUrl</name>
         <type>executable_pool</type>
         <command>has-url</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     
   </functions>
@@ -299,8 +302,10 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <summary>ClickHouse example queries</summary>
 
   ```sql
-  SELECT extractUrl('value');
-  SELECT hasUrl('value');
+  SELECT extractUrl("extract from this https://duyet.net")
+  
+  SELECT hasUrl("extract from this https://duyet.net")
+  SELECT hasUrl("no url here")
   ```
 </details>
 
@@ -314,8 +319,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_array_v0.1.8_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_array_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_array_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_array_v<version>_x86_64-unknown-linux-musl.tar.gz
 
   array-topk
   
@@ -335,15 +340,15 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <functions>
     <!-- array -->
     <function>
-        <name>arrayTopk</name>
+        <name>arrayTopK</name>
         <type>executable_pool</type>
         <command>array-topk</command>
-        <format>tabseparated</format>
+        <format>TabSeparated</format>
         <argument>
-            <type>string</type>
+            <type>String</type>
             <name>value</name>
         </argument>
-        <return_type>string</return_type>
+        <return_type>String</return_type>
     </function>
     
   </functions>
@@ -357,7 +362,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   <summary>ClickHouse example queries</summary>
 
   ```sql
-  SELECT arrayTopk('value');
+  SELECT arrayTopK(3)([1, 1, 2, 2, 3, 4, 5])
+  SELECT arrayTopK(1)([2, 3, 4, 5])
   ```
 </details>
 
@@ -367,3 +373,4 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
 MIT
 
+Done

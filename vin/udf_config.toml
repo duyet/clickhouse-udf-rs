@@ -1,0 +1,26 @@
+[vin-cleaner]
+udf_name = 'vinCleaner'
+usages = [
+  'SELECT vinCleaner("1G1JC1249Y7150000")',
+  'SELECT vinCleaner("1G1JC1249Y7150000 ...")',
+]
+
+[vin-year]
+udf_name = 'vinYear'
+usages = ['SELECT vinYear("1G1JC1249Y7150000")']
+
+[vin-manuf]
+udf_name = 'vinManuf'
+usages = ['SELECT vinManuf("1G1JC1249Y7150000")']
+
+[vin-cleaner-chunk-header]
+udf_name = 'vinCleaner'
+usages = ['SELECT vinCleaner("1G1JC1249Y7150000")']
+
+[vin-year-chunk-header]
+udf_name = 'vinYear'
+usages = ['SELECT vinYear("1G1JC1249Y7150000")']
+
+[vin-manuf-chunk-header]
+udf_name = 'vinManuf'
+usages = ['SELECT vinManuf("1G1JC1249Y7150000")']

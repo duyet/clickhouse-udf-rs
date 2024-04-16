@@ -1,0 +1,10 @@
+[extract-url]
+udf_name = 'extractUrl'
+usages = ['SELECT extractUrl("extract from this https://duyet.net")']
+
+[has-url]
+udf_name = 'hasUrl'
+usages = [
+  'SELECT hasUrl("extract from this https://duyet.net")',
+  'SELECT hasUrl("no url here")',
+]

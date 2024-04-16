@@ -15,3 +15,4 @@ cargo_toml = "0.19.2"
 change-case = "0.2.0"
 serde = { version = "^1.0.197", features = ["derive"] }
 tera = "1.19.1"
+toml = "0.8.12"

@@ -1,13 +1,27 @@
 use anyhow::{anyhow, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::{collections::HashMap, env};
 use tera::{Context, Tera};
 
+#[derive(Serialize, Deserialize, Debug)]
+struct UdfConfig {
+    udf_name: String,
+    usages: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Bin {
+    name: String,
+    bin: String,
+    udf_name: String,
+    usages: Vec<String>,
+}
+
 #[derive(Serialize)]
 struct Project {
     name: String,
-    bins: Vec<String>,
+    bins: Vec<Bin>,
 }
 
 const IGNORED: [&str; 2] = ["shared", "string"];
@@ -21,13 +35,31 @@ impl tera::Filter for ToClickHouseFunctionName {
         _: &HashMap<String, tera::Value>,
     ) -> tera::Result<tera::Value> {
         match value {
-            tera::Value::String(bin) => Ok(tera::Value::String(change_case::camel_case(bin))),
+            tera::Value::String(bin) => Ok(tera::Value::String(to_clickhouse_udf_name(bin))),
             _ => Err("Expected a string".into()),
         }
     }
 }
 
-fn get_bins(member: String) -> Result<Vec<String>> {
+fn to_clickhouse_udf_name(bin: &str) -> String {
+    let name = bin.trim_end_matches("-chunk-header");
+    change_case::camel_case(name)
+}
+
+fn get_bin_config(member: String) -> Result<HashMap<String, UdfConfig>> {
+    let path = format!("{}/udf_config.toml", member);
+
+    // Read toml
+    let content = std::fs::read_to_string(&path)?;
+    dbg!(&content);
+
+    let config = toml::from_str::<HashMap<String, UdfConfig>>(&content)?;
+    dbg!(&config);
+
+    Ok(config)
+}
+
+fn get_bins(member: String) -> Result<Vec<Bin>> {
     let child_path = format!("{}/Cargo.toml", member);
 
     let mut manifest = cargo_toml::Manifest::from_path(Path::new(&child_path))?;
@@ -36,7 +68,27 @@ fn get_bins(member: String) -> Result<Vec<String>> {
     let bins = manifest
         .bin
         .into_iter()
-        .map(|bin| bin.name.unwrap_or_default())
+        .map(|bin| {
+            let config = get_bin_config(member.clone()).unwrap_or_default();
+
+            Bin {
+                name: bin.name.clone().unwrap_or_default(),
+                bin: bin.path.unwrap_or_default(),
+                udf_name: config
+                    .get(&bin.name.clone().unwrap_or_default())
+                    .map(|c| c.udf_name.clone())
+                    .or_else(|| {
+                        Some(to_clickhouse_udf_name(
+                            &bin.name.clone().unwrap_or_default(),
+                        ))
+                    })
+                    .unwrap_or_default(),
+                usages: config
+                    .get(&bin.name.clone().unwrap_or_default())
+                    .map(|c| c.usages.clone())
+                    .unwrap_or_default(),
+            }
+        })
         .collect::<Vec<_>>();
 
     dbg!(&bins);
@@ -107,5 +159,6 @@ fn main() -> Result<()> {
         false => println!("No README.tpl found"),
     }
 
+    println!("Done");
     Ok(())
 }

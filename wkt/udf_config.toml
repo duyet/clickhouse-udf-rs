@@ -1,0 +1,3 @@
+[read-wkt-linestring]
+udf_name = 'readWktLineString'
+usages = ['SELECT readWktLineString("LINESTRING (30 10, 10 30, 40 40)")']
