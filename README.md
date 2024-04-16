@@ -39,8 +39,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_wkt_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_wkt_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_wkt_v0.1.8_x86_64-unknown-linux-musl.tar.gz
 
   read-wkt-linestring
   
@@ -96,8 +96,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_vin_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_vin_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_vin_v0.1.8_x86_64-unknown-linux-musl.tar.gz
 
   vin-cleaner
   vin-cleaner-chunk-header
@@ -246,8 +246,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_url_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_url_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_url_v0.1.8_x86_64-unknown-linux-musl.tar.gz
 
   extract-url
   has-url
@@ -319,8 +319,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
   ```bash
   $ cd /var/lib/clickhouse/user_scripts/
-  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/<version>/clickhouse_udf_array_v<version>_x86_64-unknown-linux-musl.tar.gz
-  $ tar zxvf clickhouse_udf_array_v<version>_x86_64-unknown-linux-musl.tar.gz
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_array_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_array_v0.1.8_x86_64-unknown-linux-musl.tar.gz
 
   array-topk
   
