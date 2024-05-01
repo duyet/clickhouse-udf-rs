@@ -11,8 +11,8 @@ path = "src/bin/readme-generator.rs"
 
 [dependencies]
 anyhow = "1.0.82"
-cargo_toml = "0.20.1"
+cargo_toml = "0.20.2"
 change-case = "0.2.0"
-serde = { version = "^1.0.198", features = ["derive"] }
+serde = { version = "^1.0.200", features = ["derive"] }
 tera = "1.19.1"
 toml = "0.8.12"
