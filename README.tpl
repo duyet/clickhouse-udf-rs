@@ -120,6 +120,12 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
 {% endfor %}
 
+# Generate README
+
+```bash
+RELEASE_VERSION={{ version }} cargo run --bin readme-generator . > README.md
+```
+
 # License
 
 MIT

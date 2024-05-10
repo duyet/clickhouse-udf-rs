@@ -7,6 +7,11 @@ edition = "2021"
 name = 'string-format'
 path = 'src/bin/string-format.rs'
 
+[[bin]]
+name = 'extract-phone'
+path = 'src/bin/extract-phone.rs'
+
 [dependencies]
 anyhow = "1.0.82"
+regex = "1.10.4"
 shared = { path = "../shared" }
