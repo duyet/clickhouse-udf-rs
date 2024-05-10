@@ -369,6 +369,12 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 
 
 
+# Generate README
+
+```bash
+RELEASE_VERSION=0.1.8 cargo run --bin readme-generator . > README.md
+```
+
 # License
 
 MIT
