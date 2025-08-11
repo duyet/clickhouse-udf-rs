@@ -19,7 +19,7 @@ jobs:
           - debug
           - release
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -46,7 +46,7 @@ jobs:
           - ubuntu-latest
           - macOS-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -64,7 +64,7 @@ jobs:
           - ubuntu-latest
           - macOS-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
 
       - uses: actions-rs/toolchain@v1
         with:
