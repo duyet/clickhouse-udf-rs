@@ -39,5 +39,5 @@ regex = "1.10.4"
 shared = { path = "../shared" }
 
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
+criterion = { version = "0.7.0", features = ["html_reports"] }
 
