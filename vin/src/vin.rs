@@ -1,24 +1,38 @@
 use chrono::{Datelike, Local};
 use csv::ReaderBuilder;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use std::collections::HashMap;
 
 static WMI_DATA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", "src/wmi.csv"));
 
-pub fn get_wmicsv() -> HashMap<String, String> {
-    let mut map = HashMap::new();
+static VIN_REGEXES: Lazy<Vec<Regex>> = Lazy::new(|| {
+    vec![
+        Regex::new(r"[A-HJ-NPR-Z0-9]{17}").unwrap(),
+        Regex::new(r"[A-HJ-NPR-Z0-9]{16}").unwrap(),
+        Regex::new(r"[A-HJ-NPR-Z0-9]{18}").unwrap(),
+        Regex::new(r"[A-Z0-9]{17}").unwrap(),
+    ]
+});
 
+static WMI_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {
+    let mut map = HashMap::new();
     let mut reader = ReaderBuilder::new()
         .delimiter(b',')
         .from_reader(WMI_DATA.as_bytes());
 
     for record in reader.records().flatten() {
-        let wmi = record[0].trim().to_string();
-        let manuf = record[1].trim().to_string();
-        map.insert(wmi, manuf);
+        if record.len() >= 2 {
+            let wmi = record[0].trim().to_string();
+            let manuf = record[1].trim().to_string();
+            map.insert(wmi, manuf);
+        }
     }
-
     map
+});
+
+pub fn get_wmicsv() -> HashMap<String, String> {
+    WMI_MAP.clone()
 }
 
 pub fn wmi(vin: &str) -> Option<String> {
@@ -42,17 +56,19 @@ pub fn wmi(vin: &str) -> Option<String> {
 
 pub fn vin_manuf(vin: &str) -> Option<String> {
     let vin = vin_cleaner(vin).unwrap_or_default();
-    let manfs = get_wmicsv();
 
     match wmi(&vin) {
-        Some(w) => match w.is_empty() {
-            true => None,
-            false => manfs
-                .get(&w[..2].to_string())
-                .or_else(|| manfs.get(&w.to_string()))
-                .cloned(),
-        },
-        None => None,
+        Some(w) if !w.is_empty() => {
+            if w.len() >= 2 {
+                WMI_MAP
+                    .get(&w[..2].to_string())
+                    .or_else(|| WMI_MAP.get(&w.to_string()))
+                    .cloned()
+            } else {
+                WMI_MAP.get(&w.to_string()).cloned()
+            }
+        }
+        _ => None,
     }
 }
 
@@ -63,18 +79,7 @@ pub fn vin_cleaner(vin: &str) -> Option<String> {
 
     let vin = vin.trim().to_uppercase();
 
-    let vin_patterns = [
-        // Standard VIN pattern (17 characters)
-        r"[A-HJ-NPR-Z0-9]{17}",
-        // 16 and 18 character patterns
-        r"[A-HJ-NPR-Z0-9]{16}",
-        r"[A-HJ-NPR-Z0-9]{18}",
-        // Non-standard pattern (17 characters, allowing all letters)
-        r"[A-Z0-9]{17}",
-    ];
-
-    for pattern in vin_patterns.iter() {
-        let re = Regex::new(pattern).ok()?;
+    for re in VIN_REGEXES.iter() {
         if let Some(mat) = re.find(&vin) {
             return Some(mat.as_str().to_uppercase());
         }
@@ -120,7 +125,8 @@ pub fn vin_year(vin: &str) -> Option<String> {
         // of VIN refers to a year in the range 2010–2039
         // If position seven is NUMERIC, the model year in position 10
         // of the VIN refers to a year in the range 1980–2009
-        if "ABCDEFGHJKLMNPRSTUVWXYZ".contains(vin.chars().nth(6).unwrap()) {
+        let pos6_char = vin.chars().nth(6)?;
+        if "ABCDEFGHJKLMNPRSTUVWXYZ".contains(pos6_char) {
             2010..2040
         } else {
             1980..2010
@@ -131,9 +137,9 @@ pub fn vin_year(vin: &str) -> Option<String> {
 
     // Determine the character in VIN that represents the model year
     let year_model_char = if is_eu {
-        vin.chars().nth(10).unwrap()
+        vin.chars().nth(10)?
     } else {
-        vin.chars().nth(9).unwrap()
+        vin.chars().nth(9)?
     };
 
     let current_year = Local::now().year();

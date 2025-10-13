@@ -10,7 +10,7 @@ fn string_format(s: &str) -> Option<String> {
     let (s, args) = args.split_at(1);
 
     // Replacing each {} with the corresponding arg
-    let mut result = s[0].to_string();
+    let mut result = s.get(0).map(|s| s.to_string()).unwrap_or_default();
 
     for arg in args.iter() {
         result = result.replacen("{}", arg, 1);

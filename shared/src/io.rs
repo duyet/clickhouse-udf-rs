@@ -28,7 +28,13 @@ pub fn process_stdin_send_chunk_header(f: ProcessFn) {
 
     // Read chunk length
     while let Some(Ok(line)) = lines.next() {
-        let length: usize = line.trim().parse().expect("Failed to parse chunk length");
+        let length: usize = match line.trim().parse() {
+            Ok(len) => len,
+            Err(_) => {
+                eprintln!("Failed to parse chunk length: {}", line);
+                continue;
+            }
+        };
 
         for _ in 0..length {
             if let Some(Ok(line)) = lines.next() {
@@ -38,6 +44,8 @@ pub fn process_stdin_send_chunk_header(f: ProcessFn) {
         }
 
         // Flush stdout
-        io::stdout().flush().expect("Error flushing stdout");
+        if let Err(e) = io::stdout().flush() {
+            eprintln!("Warning: Failed to flush stdout: {}", e);
+        }
     }
 }

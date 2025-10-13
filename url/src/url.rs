@@ -1,7 +1,3 @@
-fn is_whitespace(s: &str) -> bool {
-    s.chars().all(char::is_whitespace)
-}
-
 /// Returns the index to the start and the end of the URL
 /// if the the given string includes a
 /// URL or alike. Otherwise, returns `None`.
@@ -11,12 +7,11 @@ pub fn detect_url(s: &str) -> Option<(usize, usize)> {
     for pattern in patterns {
         match s.find(pattern) {
             Some(pos) => {
-                let end = s
-                    .chars()
-                    .skip(pos + pattern.len())
-                    .position(|g| is_whitespace(g.to_string().as_str()))
-                    .unwrap_or(s.len() - pos - pattern.len());
-                return Some((pos, pos + end + pattern.len()));
+                let remaining = &s[pos + pattern.len()..];
+                let end_offset = remaining
+                    .find(char::is_whitespace)
+                    .unwrap_or(remaining.len());
+                return Some((pos, pos + pattern.len() + end_offset));
             }
             None => continue,
         }
