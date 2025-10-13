@@ -1191,6 +1191,7 @@ dependencies = [
  "chrono",
  "criterion",
  "csv",
+ "once_cell",
  "regex",
  "shared",
 ]
