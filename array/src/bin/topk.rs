@@ -24,7 +24,16 @@ fn topk_fn(k: usize) -> ProcessFn {
             topk.insert(i, 1);
         }
 
-        let topk_result = topk.into_sorted_vec();
+        let mut topk_result = topk.into_sorted_vec();
+
+        // Stable sort: first by frequency (descending), then by value (ascending) for deterministic ordering
+        topk_result.sort_by(|a, b| {
+            a.1.estimated_count()
+                .cmp(&b.1.estimated_count())
+                .reverse()
+                .then_with(|| a.0.cmp(&b.0))
+        });
+
         let topk_result_array = topk_result.iter().map(|i| i.0).collect::<Vec<&str>>();
 
         Some(format!("[{}]", topk_result_array.join(",")))
