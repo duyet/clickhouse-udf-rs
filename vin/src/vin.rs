@@ -8,10 +8,10 @@ static WMI_DATA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", "s
 
 static VIN_REGEXES: Lazy<Vec<Regex>> = Lazy::new(|| {
     vec![
-        Regex::new(r"[A-HJ-NPR-Z0-9]{17}").unwrap(),
-        Regex::new(r"[A-HJ-NPR-Z0-9]{16}").unwrap(),
-        Regex::new(r"[A-HJ-NPR-Z0-9]{18}").unwrap(),
-        Regex::new(r"[A-Z0-9]{17}").unwrap(),
+        Regex::new(r"[A-HJ-NPR-Z0-9]{17}").expect("Invalid VIN regex pattern 1"),
+        Regex::new(r"[A-HJ-NPR-Z0-9]{16}").expect("Invalid VIN regex pattern 2"),
+        Regex::new(r"[A-HJ-NPR-Z0-9]{18}").expect("Invalid VIN regex pattern 3"),
+        Regex::new(r"[A-Z0-9]{17}").expect("Invalid VIN regex pattern 4"),
     ]
 });
 
@@ -31,8 +31,8 @@ static WMI_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {
     map
 });
 
-pub fn get_wmicsv() -> HashMap<String, String> {
-    WMI_MAP.clone()
+pub fn get_wmicsv() -> &'static HashMap<String, String> {
+    &WMI_MAP
 }
 
 pub fn wmi(vin: &str) -> Option<String> {

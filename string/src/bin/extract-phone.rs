@@ -1,10 +1,12 @@
+use once_cell::sync::Lazy;
 use regex::Regex;
 use shared::io::process_stdin;
 
-fn extract_phone(input: &str) -> Option<String> {
-    let phone_regex = Regex::new(r"\+?\d[\d -]{8,}\d").ok()?;
+static PHONE_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\+?\d[\d -]{8,}\d").expect("Invalid phone regex pattern"));
 
-    if let Some(cap) = phone_regex.captures_iter(input).next() {
+fn extract_phone(input: &str) -> Option<String> {
+    if let Some(cap) = PHONE_REGEX.captures_iter(input).next() {
         let phone = cap.get(0).map_or("", |m| m.as_str());
         let normalized_phone = phone
             .chars()

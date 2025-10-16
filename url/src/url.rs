@@ -1,10 +1,11 @@
+/// Static array of URL protocol patterns
+const URL_PATTERNS: &[&str] = &["http://", "https://", "ftp://", "ftps://", "file://"];
+
 /// Returns the index to the start and the end of the URL
 /// if the the given string includes a
 /// URL or alike. Otherwise, returns `None`.
 pub fn detect_url(s: &str) -> Option<(usize, usize)> {
-    let patterns = vec!["http://", "https://", "ftp://", "ftps://", "file://"];
-
-    for pattern in patterns {
+    for &pattern in URL_PATTERNS {
         match s.find(pattern) {
             Some(pos) => {
                 let remaining = &s[pos + pattern.len()..];
