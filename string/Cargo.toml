@@ -13,5 +13,6 @@ path = 'src/bin/extract-phone.rs'
 
 [dependencies]
 anyhow = "1.0.82"
+once_cell = "1.21.3"
 regex = "1.10.4"
 shared = { path = "../shared" }

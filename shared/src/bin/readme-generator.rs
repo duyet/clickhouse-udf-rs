@@ -51,10 +51,8 @@ fn get_bin_config(member: String) -> Result<HashMap<String, UdfConfig>> {
 
     // Read toml
     let content = std::fs::read_to_string(&path)?;
-    dbg!(&content);
 
     let config = toml::from_str::<HashMap<String, UdfConfig>>(&content)?;
-    dbg!(&config);
 
     Ok(config)
 }
@@ -91,8 +89,6 @@ fn get_bins(member: String) -> Result<Vec<Bin>> {
         })
         .collect::<Vec<_>>();
 
-    dbg!(&bins);
-
     Ok(bins)
 }
 
@@ -100,8 +96,6 @@ fn get_bins(member: String) -> Result<Vec<Bin>> {
 fn get_projects() -> Result<Vec<Project>> {
     let mut manifest = cargo_toml::Manifest::from_path(Path::new("Cargo.toml"))?;
     manifest.complete_from_path(Path::new("Cargo.toml"))?;
-
-    dbg!(&manifest);
 
     match manifest.workspace {
         Some(ref workspace) => Ok(workspace

@@ -3,14 +3,21 @@ use wkt::TryFromWkt;
 
 /// Converts a linestring to a string in format
 pub fn to_string<T: CoordNum + std::fmt::Display>(linestring: LineString<T>) -> String {
-    let mut result = "".to_string();
+    let points: Vec<_> = linestring.into_iter().collect();
+    let mut result = String::with_capacity(points.len() * 16);
+    let mut is_first = true;
 
-    for point in linestring {
-        result.push_str(&format!("({},{}),", point.x, point.y));
+    for point in points {
+        if !is_first {
+            result.push(',');
+        }
+        result.push('(');
+        result.push_str(&point.x.to_string());
+        result.push(',');
+        result.push_str(&point.y.to_string());
+        result.push(')');
+        is_first = false;
     }
-
-    // Remove trailing comma and space
-    result.pop();
 
     format!("[{}]", result)
 }
