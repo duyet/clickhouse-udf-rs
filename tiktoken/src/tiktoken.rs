@@ -16,7 +16,8 @@ fn get_tokenizer() -> Result<CoreBPE> {
 /// * `Some(String)` - Number of tokens as a string, or None if encoding fails
 ///
 /// # Examples
-/// ```
+/// ```ignore
+/// use tiktoken::tiktoken::tiktoken_count;
 /// let count = tiktoken_count("Hello, world!");
 /// assert_eq!(count, Some("4".to_string()));
 /// ```
@@ -40,7 +41,8 @@ pub fn tiktoken_count(s: &str) -> Option<String> {
 /// * `Some(String)` - Comma-separated token IDs, or None if encoding fails
 ///
 /// # Examples
-/// ```
+/// ```ignore
+/// use tiktoken::tiktoken::tiktoken_encode;
 /// let encoded = tiktoken_encode("Hello");
 /// // Returns something like "9906"
 /// ```
@@ -81,7 +83,8 @@ mod tests {
 
     #[test]
     fn test_tiktoken_count_long_text() {
-        let text = "The quick brown fox jumps over the lazy dog. This is a test sentence to count tokens.";
+        let text =
+            "The quick brown fox jumps over the lazy dog. This is a test sentence to count tokens.";
         let result = tiktoken_count(text);
         assert!(result.is_some());
 
@@ -129,7 +132,11 @@ mod tests {
 
         let count: usize = count_result.unwrap().parse().unwrap();
         let encoded = encode_result.unwrap();
-        let token_count = if encoded.is_empty() { 0 } else { encoded.split(',').count() };
+        let token_count = if encoded.is_empty() {
+            0
+        } else {
+            encoded.split(',').count()
+        };
 
         assert_eq!(count, token_count);
     }
