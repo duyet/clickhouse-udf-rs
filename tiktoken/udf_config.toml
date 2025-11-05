@@ -1,0 +1,15 @@
+[tiktoken-count]
+udf_name = 'tiktokenCount'
+usages = [
+  'SELECT tiktokenCount("Hello, world!")',
+  'SELECT tiktokenCount("The quick brown fox jumps over the lazy dog")',
+  'SELECT tiktokenCount("") -- empty string returns 0',
+]
+
+[tiktoken-encode]
+udf_name = 'tiktokenEncode'
+usages = [
+  'SELECT tiktokenEncode("Hello")',
+  'SELECT tiktokenEncode("GPT-4 is amazing!")',
+  'SELECT tiktokenEncode("The quick brown fox")',
+]
