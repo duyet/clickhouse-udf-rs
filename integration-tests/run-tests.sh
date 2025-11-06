@@ -115,6 +115,7 @@ total_tests=0
 failed_tests=0
 passed_tests=0
 declare -a failed_test_names
+declare -A failed_test_outputs
 
 for test_file in "$TEST_DIR/sql"/test_*.sql; do
     if [ ! -f "$test_file" ]; then
@@ -138,6 +139,7 @@ for test_file in "$TEST_DIR/sql"/test_*.sql; do
         echo -e "${RED}FAILED${NC}"
         failed_tests=$((failed_tests + 1))
         failed_test_names+=("$test_name")
+        failed_test_outputs["$test_name"]="$output"
         echo "| $test_name | ❌ FAILED |" >> "$SUMMARY_FILE"
         echo "Error output:"
         echo "$output"
@@ -187,7 +189,15 @@ The following tests did not pass:
 
 EOF
     for test in "${failed_test_names[@]}"; do
-        echo "- ❌ \`$test\`" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "<details>" >> "$SUMMARY_FILE"
+        echo "<summary>❌ <code>$test</code></summary>" >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo '```' >> "$SUMMARY_FILE"
+        echo "${failed_test_outputs[$test]}" >> "$SUMMARY_FILE"
+        echo '```' >> "$SUMMARY_FILE"
+        echo "" >> "$SUMMARY_FILE"
+        echo "</details>" >> "$SUMMARY_FILE"
     done
     cat >> "$SUMMARY_FILE" <<EOF
 
