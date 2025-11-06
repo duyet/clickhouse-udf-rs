@@ -128,8 +128,17 @@ jobs:
           for xml_file in ${{ github.workspace }}/clickhouse-data/config/*_function.xml; do
             if [ -f "$xml_file" ]; then
               filename=$(basename "$xml_file")
+
+              # Copy file
               docker cp "$xml_file" "clickhouse-test:/etc/clickhouse-server/$filename"
-              echo "  ✓ $filename"
+
+              # Immediately verify it exists
+              if docker exec clickhouse-test test -f "/etc/clickhouse-server/$filename"; then
+                echo "  ✓ $filename"
+              else
+                echo "  ✗ $filename - FAILED to copy!"
+                exit 1
+              fi
             fi
           done
 
