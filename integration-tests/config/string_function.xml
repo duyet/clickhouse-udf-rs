@@ -1,26 +1,28 @@
-<functions>
-    <!-- String Functions -->
-    <function>
-        <name>stringFormat</name>
-        <type>executable_pool</type>
-        <command>string-format</command>
-        <format>TabSeparated</format>
-        <argument>
-            <type>String</type>
-            <name>value</name>
-        </argument>
-        <return_type>String</return_type>
-    </function>
+<clickhouse>
+    <functions>
+        <!-- String Functions -->
+        <function>
+            <name>stringFormat</name>
+            <type>executable_pool</type>
+            <command>string-format</command>
+            <format>TabSeparated</format>
+            <argument>
+                <type>String</type>
+                <name>value</name>
+            </argument>
+            <return_type>String</return_type>
+        </function>
 
-    <function>
-        <name>extractPhone</name>
-        <type>executable_pool</type>
-        <command>extract-phone</command>
-        <format>TabSeparated</format>
-        <argument>
-            <type>String</type>
-            <name>value</name>
-        </argument>
-        <return_type>String</return_type>
-    </function>
-</functions>
+        <function>
+            <name>extractPhone</name>
+            <type>executable_pool</type>
+            <command>extract-phone</command>
+            <format>TabSeparated</format>
+            <argument>
+                <type>String</type>
+                <name>value</name>
+            </argument>
+            <return_type>String</return_type>
+        </function>
+    </functions>
+</clickhouse>

@@ -27,10 +27,10 @@ fn topk_fn(k: usize) -> ProcessFn {
         let mut topk_result = topk.into_sorted_vec();
 
         // Stable sort: first by frequency (descending), then by value (ascending) for deterministic ordering
-        topk_result.sort_by(|a, b| {
-            a.1.estimated_count()
-                .cmp(&b.1.estimated_count())
-                .reverse()
+        // Using sort_stable_by to ensure deterministic results when frequencies are equal
+        topk_result.sort_stable_by(|a, b| {
+            b.1.estimated_count()
+                .cmp(&a.1.estimated_count())
                 .then_with(|| a.0.cmp(&b.0))
         });
 
