@@ -18,18 +18,6 @@ jobs:
           - "25.7"
           - "25.8"
 
-    services:
-      clickhouse:
-        image: ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }}
-        ports:
-          - 8123:8123
-          - 9000:9000
-        options: >-
-          --health-cmd "clickhouse-client --query 'SELECT 1'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -67,6 +55,51 @@ jobs:
           echo "Built binaries:"
           ls -lh target/release/ | grep -E '^-.*x' | grep -v '\.d$'
 
+      - name: Prepare ClickHouse directories
+        run: |
+          # Create directories for mounting
+          mkdir -p ${{ github.workspace }}/clickhouse-data/user_scripts
+          mkdir -p ${{ github.workspace }}/clickhouse-data/config
+
+          # Copy UDF binaries
+          echo "Copying UDF binaries..."
+          cp target/release/read-wkt-linestring \
+             target/release/vin-cleaner \
+             target/release/vin-manuf \
+             target/release/vin-year \
+             target/release/extract-url \
+             target/release/has-url \
+             target/release/array-topk \
+             target/release/extract-phone \
+             target/release/tiktoken-count \
+             target/release/tiktoken-encode \
+             ${{ github.workspace }}/clickhouse-data/user_scripts/ 2>/dev/null || echo "Some binaries not found, continuing..."
+
+          # Make binaries executable
+          chmod +x ${{ github.workspace }}/clickhouse-data/user_scripts/*
+
+          # Copy XML configurations
+          echo "Copying XML configurations..."
+          cp integration-tests/config/*.xml ${{ github.workspace }}/clickhouse-data/config/
+
+          echo "Directory contents:"
+          ls -la ${{ github.workspace }}/clickhouse-data/user_scripts/
+          ls -la ${{ github.workspace }}/clickhouse-data/config/
+
+      - name: Start ClickHouse container
+        run: |
+          echo "Starting ClickHouse ${{ matrix.clickhouse_version }}..."
+          docker run -d \
+            --name clickhouse-test \
+            -p 8123:8123 \
+            -p 9000:9000 \
+            -v ${{ github.workspace }}/clickhouse-data/user_scripts:/var/lib/clickhouse/user_scripts \
+            -v ${{ github.workspace }}/clickhouse-data/config:/etc/clickhouse-server/conf.d \
+            ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }}
+
+          echo "Container started, waiting for initialization..."
+          sleep 5
+
       - name: Install ClickHouse client
         run: |
           sudo apt-get update
@@ -76,108 +109,32 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clickhouse-client
 
-      - name: Debug - Check service container status
-        run: |
-          echo "=== Docker containers ==="
-          docker ps -a
-
-          echo ""
-          echo "=== Service container details ==="
-          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
-          if [ -z "$CONTAINER_ID" ]; then
-            echo "ERROR: No container found for clickhouse_${{ matrix.clickhouse_version }}"
-            echo "Trying to find any ClickHouse containers:"
-            docker ps -a | grep clickhouse || echo "No ClickHouse containers found"
-            exit 1
-          fi
-
-          echo "Container ID: $CONTAINER_ID"
-          docker inspect $CONTAINER_ID --format='{{.State.Status}}: {{.State.Health.Status}}'
-
-          echo ""
-          echo "=== ClickHouse logs (last 50 lines) ==="
-          docker logs $CONTAINER_ID 2>&1 | tail -50
-
-          echo ""
-          echo "=== Network connectivity test ==="
-          curl -v http://localhost:8123/ || echo "HTTP connection failed"
-
       - name: Wait for ClickHouse to be ready
         run: |
-          echo "Service container reported healthy, but ClickHouse may still be initializing..."
-          echo "Waiting an additional 10 seconds for full startup..."
-          sleep 10
-
-          echo "Now testing ClickHouse connection..."
+          echo "Waiting for ClickHouse to be ready..."
           for i in {1..30}; do
             if clickhouse-client --host localhost --port 8123 --query "SELECT 1" > /dev/null 2>&1; then
               echo "✓ ClickHouse is ready!"
               echo "Version:"
               clickhouse-client --host localhost --port 8123 --query "SELECT version()"
+              echo ""
+              echo "Reloading configuration..."
+              docker exec clickhouse-test clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
               exit 0
             fi
             echo "Attempt $i/30..."
-            sleep 2
+            sleep 3
           done
 
           echo "ERROR: ClickHouse did not become ready in time"
-          echo "Checking container logs:"
-          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
-          docker logs $CONTAINER_ID 2>&1 | tail -100
+          echo "Container logs:"
+          docker logs clickhouse-test 2>&1 | tail -100
           exit 1
 
-      - name: Deploy UDF binaries to ClickHouse container
+      - name: Verify UDF registration
         run: |
-          # Get the container ID
-          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
-          echo "Container ID: $CONTAINER_ID"
-
-          # Create user_scripts directory if it doesn't exist
-          docker exec $CONTAINER_ID mkdir -p /var/lib/clickhouse/user_scripts/
-
-          # Copy all UDF binaries to the container
-          for binary in target/release/read-wkt-linestring \
-                        target/release/vin-cleaner \
-                        target/release/vin-manuf \
-                        target/release/vin-year \
-                        target/release/extract-url \
-                        target/release/has-url \
-                        target/release/array-topk \
-                        target/release/extract-phone \
-                        target/release/tiktoken-count \
-                        target/release/tiktoken-encode; do
-            if [ -f "$binary" ]; then
-              echo "Copying $(basename $binary)..."
-              docker cp "$binary" $CONTAINER_ID:/var/lib/clickhouse/user_scripts/
-              docker exec $CONTAINER_ID chmod +x "/var/lib/clickhouse/user_scripts/$(basename $binary)"
-            else
-              echo "Warning: $binary not found"
-            fi
-          done
-
-      - name: Deploy UDF XML configurations
-        run: |
-          # Get the container ID
-          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
-
-          # Copy XML configuration files to the container
-          for config in integration-tests/config/*.xml; do
-            if [ -f "$config" ]; then
-              echo "Copying $(basename $config)..."
-              docker cp "$config" $CONTAINER_ID:/etc/clickhouse-server/
-            fi
-          done
-
-          # Reload ClickHouse configuration
-          docker exec $CONTAINER_ID clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
-
-      - name: Wait for UDFs to be loaded
-        run: |
-          echo "Waiting for UDFs to be registered..."
-          sleep 5
-
-          echo "Checking registered functions..."
-          clickhouse-client --host localhost --port 8123 --query "SELECT name FROM system.functions WHERE name LIKE '%vin%' OR name LIKE '%array%' OR name LIKE '%wkt%' OR name LIKE '%url%' OR name LIKE '%tiktoken%' OR name LIKE '%phone%' ORDER BY name" || true
+          echo "Checking registered UDF functions..."
+          clickhouse-client --host localhost --port 8123 --query "SELECT name FROM system.functions WHERE name LIKE '%vin%' OR name LIKE '%array%' OR name LIKE '%wkt%' OR name LIKE '%url%' OR name LIKE '%tiktoken%' OR name LIKE '%phone%' ORDER BY name"
 
       - name: Run integration tests
         run: |
@@ -187,16 +144,22 @@ jobs:
       - name: Show ClickHouse logs on failure
         if: failure()
         run: |
-          echo "ClickHouse server logs:"
-          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
-          docker logs $CONTAINER_ID 2>&1 | tail -100
+          echo "=== ClickHouse server logs ==="
+          docker logs clickhouse-test 2>&1 | tail -100
 
       - name: Debug - List ClickHouse directories
         if: failure()
         run: |
-          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
-          echo "Contents of /var/lib/clickhouse/user_scripts/:"
-          docker exec $CONTAINER_ID ls -la /var/lib/clickhouse/user_scripts/ || true
+          echo "=== Contents of /var/lib/clickhouse/user_scripts/ ==="
+          docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ || true
 
-          echo "Contents of /etc/clickhouse-server/:"
-          docker exec $CONTAINER_ID ls -la /etc/clickhouse-server/*.xml || true
+          echo ""
+          echo "=== Contents of /etc/clickhouse-server/conf.d/ ==="
+          docker exec clickhouse-test ls -la /etc/clickhouse-server/conf.d/ || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Stopping and removing container..."
+          docker stop clickhouse-test || true
+          docker rm clickhouse-test || true
