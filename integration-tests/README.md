@@ -41,6 +41,12 @@ integration-tests/
 1. **Start ClickHouse with Docker:**
 
 ```bash
+# Using custom ClickHouse image (recommended)
+docker run -d --name clickhouse-test \
+  -p 8123:8123 -p 9000:9000 \
+  ghcr.io/duyet/docker-images:clickhouse_25.2
+
+# Or use official ClickHouse image
 docker run -d --name clickhouse-test \
   -p 8123:8123 -p 9000:9000 \
   clickhouse/clickhouse-server:latest
@@ -97,12 +103,21 @@ docker rm clickhouse-test
 
 The integration tests run automatically on GitHub Actions via the `clickhouse-integration.yaml` workflow.
 
+### ClickHouse Versions Tested
+
+The CI pipeline tests against multiple ClickHouse versions using custom images:
+- **ClickHouse 24.12** - `ghcr.io/duyet/docker-images:clickhouse_24.12`
+- **ClickHouse 25.1** - `ghcr.io/duyet/docker-images:clickhouse_25.1`
+- **ClickHouse 25.2** - `ghcr.io/duyet/docker-images:clickhouse_25.2` (latest)
+
 ### Workflow Steps
 
 1. **Build**: Compile all UDF binaries in release mode
-2. **Deploy**: Start ClickHouse container and deploy binaries + configs
-3. **Test**: Run all SQL test scripts
-4. **Report**: Display test results and logs on failure
+2. **Deploy**: Start ClickHouse container (matrix strategy for multiple versions)
+3. **Install**: Deploy binaries to `/var/lib/clickhouse/user_scripts/`
+4. **Configure**: Deploy XML configs and reload ClickHouse
+5. **Test**: Run all SQL test scripts
+6. **Report**: Display test results and logs on failure
 
 ### Viewing CI Results
 

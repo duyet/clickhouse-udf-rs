@@ -1,10 +1,6 @@
 name: clickhouse-integration
 
 on:
-  push:
-    branches:
-      - main
-      - 'claude/**'
   pull_request:
 
 env:
@@ -12,12 +8,19 @@ env:
 
 jobs:
   integration-test:
-    name: ClickHouse Integration Tests
+    name: ClickHouse ${{ matrix.clickhouse_version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        clickhouse_version:
+          - "24.12"
+          - "25.1"
+          - "25.2"
 
     services:
       clickhouse:
-        image: clickhouse/clickhouse-server:latest
+        image: ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }}
         ports:
           - 8123:8123
           - 9000:9000
@@ -75,19 +78,27 @@ jobs:
 
       - name: Wait for ClickHouse to be ready
         run: |
-          for i in {1..30}; do
+          echo "Waiting for ClickHouse to be ready..."
+          for i in {1..60}; do
             if clickhouse-client --host localhost --port 8123 --query "SELECT 1" > /dev/null 2>&1; then
               echo "ClickHouse is ready!"
-              break
+              clickhouse-client --host localhost --port 8123 --query "SELECT version()"
+              exit 0
             fi
-            echo "Waiting for ClickHouse... ($i/30)"
-            sleep 2
+            echo "Attempt $i/60..."
+            sleep 3
           done
+          echo "ERROR: ClickHouse did not become ready in time"
+          exit 1
 
       - name: Deploy UDF binaries to ClickHouse container
         run: |
+          # Get the container ID
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
+          echo "Container ID: $CONTAINER_ID"
+
           # Create user_scripts directory if it doesn't exist
-          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) mkdir -p /var/lib/clickhouse/user_scripts/
+          docker exec $CONTAINER_ID mkdir -p /var/lib/clickhouse/user_scripts/
 
           # Copy all UDF binaries to the container
           for binary in target/release/read-wkt-linestring \
@@ -102,8 +113,8 @@ jobs:
                         target/release/tiktoken-encode; do
             if [ -f "$binary" ]; then
               echo "Copying $(basename $binary)..."
-              docker cp "$binary" $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest):/var/lib/clickhouse/user_scripts/
-              docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) chmod +x "/var/lib/clickhouse/user_scripts/$(basename $binary)"
+              docker cp "$binary" $CONTAINER_ID:/var/lib/clickhouse/user_scripts/
+              docker exec $CONTAINER_ID chmod +x "/var/lib/clickhouse/user_scripts/$(basename $binary)"
             else
               echo "Warning: $binary not found"
             fi
@@ -111,16 +122,19 @@ jobs:
 
       - name: Deploy UDF XML configurations
         run: |
+          # Get the container ID
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
+
           # Copy XML configuration files to the container
           for config in integration-tests/config/*.xml; do
             if [ -f "$config" ]; then
               echo "Copying $(basename $config)..."
-              docker cp "$config" $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest):/etc/clickhouse-server/
+              docker cp "$config" $CONTAINER_ID:/etc/clickhouse-server/
             fi
           done
 
           # Reload ClickHouse configuration
-          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
+          docker exec $CONTAINER_ID clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
 
       - name: Wait for UDFs to be loaded
         run: |
@@ -139,13 +153,15 @@ jobs:
         if: failure()
         run: |
           echo "ClickHouse server logs:"
-          docker logs $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) 2>&1 | tail -100
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
+          docker logs $CONTAINER_ID 2>&1 | tail -100
 
       - name: Debug - List ClickHouse directories
         if: failure()
         run: |
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
           echo "Contents of /var/lib/clickhouse/user_scripts/:"
-          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) ls -la /var/lib/clickhouse/user_scripts/ || true
+          docker exec $CONTAINER_ID ls -la /var/lib/clickhouse/user_scripts/ || true
 
           echo "Contents of /etc/clickhouse-server/:"
-          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) ls -la /etc/clickhouse-server/*.xml || true
+          docker exec $CONTAINER_ID ls -la /etc/clickhouse-server/*.xml || true
