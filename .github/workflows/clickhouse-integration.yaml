@@ -133,6 +133,25 @@ jobs:
           cd integration-tests
           ./run-tests.sh
 
+      - name: Add test summary to job
+        if: always()
+        run: |
+          if [ -f integration-tests/test-summary.md ]; then
+            echo "## ClickHouse ${{ matrix.clickhouse_version }}" >> $GITHUB_STEP_SUMMARY
+            cat integration-tests/test-summary.md >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload test summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-summary-${{ matrix.clickhouse_version }}
+          path: integration-tests/test-summary.md
+          retention-days: 30
+
       - name: Show ClickHouse logs on failure
         if: failure()
         run: |
@@ -155,3 +174,141 @@ jobs:
           echo "Stopping and removing container..."
           docker stop clickhouse-test || true
           docker rm clickhouse-test || true
+
+  post-pr-comment:
+    name: Post PR Comment
+    runs-on: ubuntu-latest
+    needs: integration-test
+    if: always() && github.event_name == 'pull_request'
+    steps:
+      - name: Download all test summaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-summary-*
+          path: summaries
+
+      - name: Create consolidated report
+        env:
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Header with metadata
+          cat > pr-comment.md <<EOF
+          # 🧪 ClickHouse UDF Integration Test Results
+
+          **Workflow Run:** [#${{ github.run_number }}]($WORKFLOW_URL)
+          **Commit:** [\`${COMMIT_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/$COMMIT_SHA)
+          **Triggered by:** @${{ github.actor }}
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ---
+
+          EOF
+
+          # Count total pass/fail across all versions
+          total_passed=0
+          total_failed=0
+          total_tests=0
+          tested_versions=0
+
+          # Add results for each version
+          for dir in summaries/test-summary-*; do
+            if [ -d "$dir" ] && [ -f "$dir/test-summary.md" ]; then
+              tested_versions=$((tested_versions + 1))
+
+              # Extract version from directory name
+              version=$(basename "$dir" | sed 's/test-summary-//')
+
+              # Add version header with link to specific job
+              echo "## ClickHouse $version" >> pr-comment.md
+              echo "" >> pr-comment.md
+              echo "**Job Logs:** [View detailed logs]($WORKFLOW_URL)" >> pr-comment.md
+              echo "" >> pr-comment.md
+
+              # Add the detailed summary
+              tail -n +2 "$dir/test-summary.md" >> pr-comment.md
+              echo "" >> pr-comment.md
+              echo "---" >> pr-comment.md
+              echo "" >> pr-comment.md
+
+              # Extract metrics for overall summary
+              if grep -q "Passed:" "$dir/test-summary.md"; then
+                passed=$(grep -oP 'Passed:.*?✅ \K\d+' "$dir/test-summary.md" || echo "0")
+                failed=$(grep -oP 'Failed:.*?❌ \K\d+' "$dir/test-summary.md" || echo "0")
+                tests=$(grep -oP 'Total Tests:.*?\*\* \K\d+' "$dir/test-summary.md" || echo "0")
+
+                total_passed=$((total_passed + passed))
+                total_failed=$((total_failed + failed))
+                total_tests=$((total_tests + tests))
+              fi
+            fi
+          done
+
+          # Overall summary
+          if [ $tested_versions -gt 0 ]; then
+            success_rate=$(awk "BEGIN {printf \"%.1f\", ($total_passed/$total_tests)*100}")
+
+            cat >> pr-comment.md <<EOF
+          ## 📊 Overall Summary
+
+          | Metric | Value |
+          |--------|-------|
+          | **ClickHouse Versions Tested** | $tested_versions |
+          | **Total Tests** | $total_tests |
+          | **Passed** | ✅ $total_passed |
+          | **Failed** | ❌ $total_failed |
+          | **Success Rate** | $success_rate% |
+
+          EOF
+          fi
+
+          # Add footer
+          cat >> pr-comment.md <<'EOF'
+
+          <details>
+          <summary>📚 Test Details</summary>
+
+          ### Test Coverage
+          This PR was tested against multiple ClickHouse versions to ensure compatibility:
+          - **ClickHouse 25.6** - Latest LTS release
+          - **ClickHouse 25.7** - Stable release
+          - **ClickHouse 25.8** - Latest release
+
+          ### Test Scope
+          - ✅ **UDF Registration** - All functions properly registered in ClickHouse
+          - ✅ **SQL Execution** - Real queries against live ClickHouse instances
+          - ✅ **Data Processing** - Input/output validation for each UDF
+          - ✅ **Error Handling** - Edge cases and error conditions
+
+          ### UDF Modules Tested
+          - `wkt` - Well-Known Text geometry parsing
+          - `vin` - Vehicle Identification Number processing
+          - `url` - URL extraction and detection
+          - `array` - Array manipulation (Top-K algorithms)
+          - `string` - String processing and extraction
+          - `tiktoken` - GPT tokenization
+
+          ### View Full Logs
+          Click the "View detailed logs" links above to see complete test output, including:
+          - ClickHouse server logs
+          - UDF execution traces
+          - SQL query results
+          - Error messages (if any)
+
+          </details>
+
+          ---
+
+          <sub>🤖 Generated by [ClickHouse Integration Tests]($WORKFLOW_URL) • [View Workflow](https://github.com/${{ github.repository }}/blob/main/.github/workflows/clickhouse-integration.yaml)</sub>
+          EOF
+
+          echo "=== Generated PR Comment ==="
+          cat pr-comment.md
+
+      - name: Post comment to PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: pr-comment.md
+          edit-mode: replace

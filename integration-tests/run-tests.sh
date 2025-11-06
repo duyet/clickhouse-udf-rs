@@ -5,12 +5,14 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
 CLICKHOUSE_CONTAINER="${CLICKHOUSE_CONTAINER:-clickhouse-test}"
 CLICKHOUSE_CLIENT="${CLICKHOUSE_CLIENT:-docker exec $CLICKHOUSE_CONTAINER clickhouse-client}"
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SUMMARY_FILE="${SUMMARY_FILE:-$TEST_DIR/test-summary.md}"
 
 echo "================================================"
 echo "ClickHouse UDF Integration Tests"
@@ -36,9 +38,28 @@ done
 echo -e "${GREEN}OK${NC}"
 echo ""
 
+# Get ClickHouse version
+CLICKHOUSE_VERSION=$($CLICKHOUSE_CLIENT --query="SELECT version()" 2>/dev/null || echo "unknown")
+echo -e "${BLUE}ClickHouse Version: $CLICKHOUSE_VERSION${NC}"
+echo ""
+
+# Initialize summary file
+cat > "$SUMMARY_FILE" <<EOF
+### 📊 ClickHouse UDF Integration Test Results
+
+> **Version:** \`$CLICKHOUSE_VERSION\`
+> **Test Date:** \`$(date -u +"%Y-%m-%d %H:%M:%S UTC")\`
+
+EOF
+
 # Verify UDF functions are registered
 echo "Verifying UDF functions are registered..."
 echo ""
+
+cat >> "$SUMMARY_FILE" <<EOF
+## UDF Registration Status
+
+EOF
 
 # Function to check if UDF exists
 check_udf() {
@@ -46,9 +67,11 @@ check_udf() {
     if $CLICKHOUSE_CLIENT \
         --query="SELECT name FROM system.functions WHERE name = '$function_name'" 2>/dev/null | grep -q "$function_name"; then
         echo -e "  ✓ ${GREEN}$function_name${NC} registered"
+        echo "- ✅ \`$function_name\`" >> "$SUMMARY_FILE"
         return 0
     else
         echo -e "  ✗ ${RED}$function_name${NC} not found"
+        echo "- ❌ \`$function_name\` (not found)" >> "$SUMMARY_FILE"
         return 1
     fi
 }
@@ -86,10 +109,19 @@ echo "Running SQL Tests"
 echo "================================================"
 echo ""
 
+cat >> "$SUMMARY_FILE" <<EOF
+
+## Test Results
+
+| Test | Status |
+|------|--------|
+EOF
+
 # Run each SQL test file
 total_tests=0
 failed_tests=0
 passed_tests=0
+declare -a failed_test_names
 
 for test_file in "$TEST_DIR/sql"/test_*.sql; do
     if [ ! -f "$test_file" ]; then
@@ -105,12 +137,15 @@ for test_file in "$TEST_DIR/sql"/test_*.sql; do
     if output=$($CLICKHOUSE_CLIENT --multiquery < "$test_file" 2>&1); then
         echo -e "${GREEN}PASSED${NC}"
         passed_tests=$((passed_tests + 1))
+        echo "| $test_name | ✅ PASSED |" >> "$SUMMARY_FILE"
 
         # Optionally show output (uncomment to debug)
         # echo "$output" | head -20
     else
         echo -e "${RED}FAILED${NC}"
         failed_tests=$((failed_tests + 1))
+        failed_test_names+=("$test_name")
+        echo "| $test_name | ❌ FAILED |" >> "$SUMMARY_FILE"
         echo "Error output:"
         echo "$output"
         echo ""
@@ -126,10 +161,65 @@ echo -e "Passed: ${GREEN}$passed_tests${NC}"
 echo -e "Failed: ${RED}$failed_tests${NC}"
 echo ""
 
-if [ $failed_tests -eq 0 ]; then
-    echo -e "${GREEN}All tests passed!${NC}"
-    exit 0
+# Add summary to file
+success_rate=$(awk "BEGIN {printf \"%.1f\", ($passed_tests/$total_tests)*100}")
+
+# Determine status emoji based on success rate
+if [ "$failed_tests" -eq 0 ]; then
+    status_emoji="🎉"
+    status_badge="![Status](https://img.shields.io/badge/Status-PASSED-success?style=for-the-badge)"
 else
+    status_emoji="⚠️"
+    status_badge="![Status](https://img.shields.io/badge/Status-FAILED-critical?style=for-the-badge)"
+fi
+
+cat >> "$SUMMARY_FILE" <<EOF
+
+#### $status_badge
+
+| Metric | Value |
+|--------|------:|
+| **Total Tests** | \`$total_tests\` |
+| **Passed** | \`$passed_tests\` ✅ |
+| **Failed** | \`$failed_tests\` ❌ |
+| **Success Rate** | **$success_rate%** |
+
+EOF
+
+if [ $failed_tests -gt 0 ]; then
     echo -e "${RED}Some tests failed!${NC}"
+    cat >> "$SUMMARY_FILE" <<EOF
+
+---
+
+### ⚠️ Failed Tests
+
+The following tests did not pass:
+
+EOF
+    for test in "${failed_test_names[@]}"; do
+        echo "- ❌ \`$test\`" >> "$SUMMARY_FILE"
+    done
+    cat >> "$SUMMARY_FILE" <<EOF
+
+> **Action Required:** Please review the test failures above and check the logs for details.
+
+EOF
+
+    echo "Summary written to: $SUMMARY_FILE"
     exit 1
+else
+    echo -e "${GREEN}All tests passed!${NC}"
+    cat >> "$SUMMARY_FILE" <<EOF
+
+---
+
+### 🎉 All Tests Passed!
+
+All integration tests completed successfully. The UDF functions are working correctly with ClickHouse \`$CLICKHOUSE_VERSION\`.
+
+EOF
+
+    echo "Summary written to: $SUMMARY_FILE"
+    exit 0
 fi
