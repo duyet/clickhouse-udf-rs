@@ -36,6 +36,14 @@ integration-tests/
 2. **Rust toolchain** - To build UDF binaries
 3. **ClickHouse client** - To execute SQL queries
 
+### Test Modes
+
+The test runner supports three modes:
+
+1. **Basic Mode**: Tests pass if SQL queries execute successfully (no `.expected` files needed)
+2. **Comparison Mode**: Tests compare actual output with `.expected` files and show diffs if they don't match
+3. **Generate Mode**: Creates or updates `.expected` files from current output (`./run-tests.sh --generate-expected`)
+
 ### Steps
 
 1. **Start ClickHouse with Docker:**
@@ -92,6 +100,34 @@ cd integration-tests
 ./run-tests.sh
 ```
 
+### Creating Expected Output Files
+
+To enable output comparison testing:
+
+```bash
+# Run tests and generate expected output files
+./run-tests.sh --generate-expected
+```
+
+This creates `.expected` files for each `.sql` test file containing the actual output. Future test runs will compare against these baselines.
+
+### Understanding Test Results
+
+- **✅ PASSED** - Test executed successfully and output matches expected (if `.expected` file exists)
+- **❌ FAILED** - Test query failed to execute
+- **❌ FAILED (output mismatch)** - Test executed but output differs from expected
+
+When output doesn't match, the test report includes a diff showing the differences:
+
+```diff
+--- expected
++++ actual
+@@ -1,2 +1,2 @@
+ Test 1: myFunction    expected_value
+-Test 2: myFunction    another_value
++Test 2: myFunction    different_value
+```
+
 ### Clean up
 
 ```bash
@@ -131,19 +167,21 @@ To add tests for a new UDF:
 
 1. **Create XML configuration** in `config/`:
    ```xml
-   <functions>
-       <function>
-           <name>myNewFunction</name>
-           <type>executable_pool</type>
-           <command>my-new-binary</command>
-           <format>TabSeparated</format>
-           <argument>
-               <type>String</type>
-               <name>value</name>
-           </argument>
-           <return_type>String</return_type>
-       </function>
-   </functions>
+   <clickhouse>
+       <functions>
+           <function>
+               <name>myNewFunction</name>
+               <type>executable_pool</type>
+               <command>my-new-binary</command>
+               <format>TabSeparated</format>
+               <argument>
+                   <type>String</type>
+                   <name>value</name>
+               </argument>
+               <return_type>String</return_type>
+           </function>
+       </functions>
+   </clickhouse>
    ```
 
 2. **Create SQL test file** in `sql/test_mynew.sql`:
@@ -153,9 +191,13 @@ To add tests for a new UDF:
    -- Expected: output
    ```
 
-3. **Update GitHub Actions workflow** to include the new binary in deployment step
+3. **Optionally create expected output file** `sql/test_mynew.expected`:
+   - Run with `--generate-expected` to auto-generate: `./run-tests.sh --generate-expected`
+   - Or manually create the file with expected query output
 
-4. **Run tests locally** to verify everything works
+4. **New binaries are automatically detected** - No need to update the workflow! The CI now dynamically detects all built binaries.
+
+5. **Run tests locally** to verify everything works
 
 ## Troubleshooting
 

@@ -13,6 +13,15 @@ CLICKHOUSE_CONTAINER="${CLICKHOUSE_CONTAINER:-clickhouse-test}"
 CLICKHOUSE_CLIENT="${CLICKHOUSE_CLIENT:-docker exec $CLICKHOUSE_CONTAINER clickhouse-client}"
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUMMARY_FILE="${SUMMARY_FILE:-$TEST_DIR/test-summary.md}"
+GENERATE_EXPECTED="${GENERATE_EXPECTED:-false}"
+
+# Check if --generate-expected flag is passed
+for arg in "$@"; do
+    if [ "$arg" == "--generate-expected" ]; then
+        GENERATE_EXPECTED=true
+        break
+    fi
+done
 
 echo "================================================"
 echo "ClickHouse UDF Integration Tests"
@@ -127,14 +136,43 @@ for test_file in "$TEST_DIR/sql"/test_*.sql; do
 
     echo -n "Running $test_name... "
 
+    # Check if expected output file exists
+    expected_file="${test_file%.sql}.expected"
+
     # Run the test and capture output
     if output=$($CLICKHOUSE_CLIENT --multiquery < "$test_file" 2>&1); then
-        echo -e "${GREEN}PASSED${NC}"
-        passed_tests=$((passed_tests + 1))
-        echo "| $test_name | ✅ PASSED |" >> "$SUMMARY_FILE"
+        # Generate expected file mode
+        if [ "$GENERATE_EXPECTED" == "true" ]; then
+            echo "$output" > "$expected_file"
+            echo -e "${GREEN}Generated $expected_file${NC}"
+            passed_tests=$((passed_tests + 1))
+        # Check if we have an expected output file to compare
+        elif [ -f "$expected_file" ]; then
+            # Compare actual output with expected
+            expected_output=$(cat "$expected_file")
+            if diff_output=$(diff -u <(echo "$expected_output") <(echo "$output") 2>&1); then
+                echo -e "${GREEN}PASSED${NC}"
+                passed_tests=$((passed_tests + 1))
+                echo "| $test_name | ✅ PASSED |" >> "$SUMMARY_FILE"
+            else
+                echo -e "${RED}FAILED (output mismatch)${NC}"
+                failed_tests=$((failed_tests + 1))
+                failed_test_names+=("$test_name")
+                failed_test_outputs["$test_name"]="Output mismatch:\n\n$diff_output"
+                echo "| $test_name | ❌ FAILED (output mismatch) |" >> "$SUMMARY_FILE"
+                echo "Output mismatch:"
+                echo "$diff_output"
+                echo ""
+            fi
+        else
+            # No expected file, just check if command succeeded
+            echo -e "${GREEN}PASSED${NC} (no expected output file)"
+            passed_tests=$((passed_tests + 1))
+            echo "| $test_name | ✅ PASSED |" >> "$SUMMARY_FILE"
 
-        # Optionally show output (uncomment to debug)
-        # echo "$output" | head -20
+            # Show hint to generate expected file
+            echo -e "${YELLOW}  Hint: Run with --generate-expected to create ${expected_file}${NC}"
+        fi
     else
         echo -e "${RED}FAILED${NC}"
         failed_tests=$((failed_tests + 1))
