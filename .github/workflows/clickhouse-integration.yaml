@@ -193,6 +193,12 @@ jobs:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          # Debug: List downloaded artifacts
+          echo "=== Downloaded Artifacts ==="
+          ls -la summaries/ || echo "No summaries directory found"
+          find summaries/ -name "*.md" -exec echo "Found: {}" \; 2>/dev/null || echo "No markdown files found"
+          echo ""
+
           # Header with metadata
           cat > pr-comment.md <<EOF
           # 🧪 ClickHouse UDF Integration Test Results
@@ -220,6 +226,9 @@ jobs:
               # Extract version from directory name
               version=$(basename "$dir" | sed 's/test-summary-//')
 
+              echo "Processing version: $version"
+              echo "File: $dir/test-summary.md"
+
               # Add version header with link to specific job
               echo "## ClickHouse $version" >> pr-comment.md
               echo "" >> pr-comment.md
@@ -232,11 +241,18 @@ jobs:
               echo "---" >> pr-comment.md
               echo "" >> pr-comment.md
 
-              # Extract metrics for overall summary
-              if grep -q "Passed:" "$dir/test-summary.md"; then
-                passed=$(grep -oP 'Passed:.*?✅ \K\d+' "$dir/test-summary.md" || echo "0")
-                failed=$(grep -oP 'Failed:.*?❌ \K\d+' "$dir/test-summary.md" || echo "0")
-                tests=$(grep -oP 'Total Tests:.*?\*\* \K\d+' "$dir/test-summary.md" || echo "0")
+              # Extract metrics for overall summary (using more robust patterns)
+              # Look for the metrics in the table format
+              if grep -q "Passed" "$dir/test-summary.md"; then
+                echo "Extracting metrics from $dir/test-summary.md"
+                cat "$dir/test-summary.md"
+
+                # Try different patterns to extract the numbers
+                passed=$(grep "Passed" "$dir/test-summary.md" | grep -oE '\`[0-9]+\`' | head -1 | tr -d '`' || echo "0")
+                failed=$(grep "Failed" "$dir/test-summary.md" | grep -oE '\`[0-9]+\`' | head -1 | tr -d '`' || echo "0")
+                tests=$(grep "Total Tests" "$dir/test-summary.md" | grep -oE '\`[0-9]+\`' | head -1 | tr -d '`' || echo "0")
+
+                echo "Extracted: tests=$tests, passed=$passed, failed=$failed"
 
                 total_passed=$((total_passed + passed))
                 total_failed=$((total_failed + failed))
@@ -245,8 +261,14 @@ jobs:
             fi
           done
 
+          echo "=== Final Totals ==="
+          echo "Versions: $tested_versions"
+          echo "Total Tests: $total_tests"
+          echo "Passed: $total_passed"
+          echo "Failed: $total_failed"
+
           # Overall summary
-          if [ $tested_versions -gt 0 ]; then
+          if [ $tested_versions -gt 0 ] && [ $total_tests -gt 0 ]; then
             success_rate=$(awk "BEGIN {printf \"%.1f\", ($total_passed/$total_tests)*100}")
 
             cat >> pr-comment.md <<EOF
@@ -259,6 +281,22 @@ jobs:
           | **Passed** | ✅ $total_passed |
           | **Failed** | ❌ $total_failed |
           | **Success Rate** | $success_rate% |
+
+          EOF
+          elif [ $tested_versions -gt 0 ] && [ $total_tests -eq 0 ]; then
+            cat >> pr-comment.md <<EOF
+          ## ⚠️ Warning
+
+          Test summaries were found but no test results could be extracted.
+          This may indicate an issue with the test summary format.
+
+          EOF
+          else
+            cat >> pr-comment.md <<EOF
+          ## ⚠️ Warning
+
+          No test summaries were found. The integration tests may not have run successfully.
+          Please check the workflow logs for details.
 
           EOF
           fi
