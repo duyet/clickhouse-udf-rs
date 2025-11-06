@@ -119,51 +119,27 @@ jobs:
           echo "Container started, waiting for initialization..."
           sleep 3
 
-      - name: Deploy UDF configurations
+      - name: Deploy UDF function definitions
         run: |
-          echo "Copying XML configuration files to ClickHouse config.d..."
-
-          # First, list what we have on the host
-          echo "Files to copy:"
-          ls -la ${{ github.workspace }}/clickhouse-data/config/
-
+          echo "Deploying UDF function definitions..."
+          echo "ClickHouse is already configured to load: /etc/clickhouse-server/*_function.xml"
           echo ""
-          echo "Current config.d contents before copy:"
-          docker exec clickhouse-test ls -la /etc/clickhouse-server/config.d/
 
-          echo ""
-          for xml_file in ${{ github.workspace }}/clickhouse-data/config/*.xml; do
+          for xml_file in ${{ github.workspace }}/clickhouse-data/config/*_function.xml; do
             if [ -f "$xml_file" ]; then
               filename=$(basename "$xml_file")
-              echo "Copying $filename..."
-
-              # Copy the file
-              if docker cp "$xml_file" clickhouse-test:/etc/clickhouse-server/config.d/"$filename"; then
-                echo "  ✓ docker cp succeeded"
-
-                # Immediately verify
-                if docker exec clickhouse-test test -f "/etc/clickhouse-server/config.d/$filename"; then
-                  echo "  ✓ File exists in container"
-                  docker exec clickhouse-test ls -lh "/etc/clickhouse-server/config.d/$filename"
-                else
-                  echo "  ✗ File not found after copy!"
-                  exit 1
-                fi
-              else
-                echo "  ✗ docker cp failed!"
-                exit 1
-              fi
+              echo "  ✓ $filename"
+              docker cp "$xml_file" clickhouse-test:/etc/clickhouse-server/
             fi
           done
 
           echo ""
-          echo "All files in config.d after copy:"
-          docker exec clickhouse-test ls -lah /etc/clickhouse-server/config.d/
+          echo "Setting permissions..."
+          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/*_function.xml
 
           echo ""
-          echo "Setting permissions on UDF files..."
-          docker exec clickhouse-test sh -c 'chown clickhouse:clickhouse /etc/clickhouse-server/config.d/*_function.xml' || echo "Failed to set permissions on function files"
-          docker exec clickhouse-test sh -c 'chown clickhouse:clickhouse /etc/clickhouse-server/config.d/udf_config.xml' || echo "Failed to set permissions on udf_config.xml"
+          echo "Deployed function definitions:"
+          docker exec clickhouse-test ls -lh /etc/clickhouse-server/*_function.xml
 
       - name: Wait for ClickHouse to be ready
         run: |
@@ -201,27 +177,15 @@ jobs:
 
       - name: Verify UDF registration
         run: |
-          echo "=== Checking UDF Registration ==="
+          echo "=== UDF Registration Status ==="
           echo ""
 
-          echo "1. Checking our UDF XML files in config.d:"
-          docker exec clickhouse-test ls -lah /etc/clickhouse-server/config.d/*_function.xml 2>/dev/null || echo "No function XML files in config.d"
+          echo "Registered executable functions:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name"
 
           echo ""
-          echo "2. Checking udf_config.xml content:"
-          docker exec clickhouse-test cat /etc/clickhouse-server/config.d/udf_config.xml 2>/dev/null || echo "udf_config.xml not found in config.d"
-
-          echo ""
-          echo "3. All registered executable functions:"
-          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name" || echo "No executable functions found"
-
-          echo ""
-          echo "4. Expected UDFs (searching by name):"
-          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name"
-
-          echo ""
-          echo "5. If functions missing, check ClickHouse logs:"
-          docker logs clickhouse-test 2>&1 | grep -i "error.*function\|error.*executable\|error.*udf\|warning.*function" | tail -20 || echo "No error/warning log entries found"
+          echo "Expected UDFs:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name, origin FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name FORMAT Vertical"
 
       - name: Run integration tests
         run: |

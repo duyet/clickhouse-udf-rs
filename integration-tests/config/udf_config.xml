@@ -1,5 +1,0 @@
-<clickhouse>
-    <!-- Tell ClickHouse where to find executable UDF function definitions -->
-    <!-- Path is relative to /etc/clickhouse-server/ -->
-    <user_defined_executable_functions_config>config.d/*_function.xml</user_defined_executable_functions_config>
-</clickhouse>
