@@ -110,8 +110,19 @@ jobs:
               echo "Version:"
               docker exec clickhouse-test clickhouse-client --query "SELECT version()"
               echo ""
+
+              echo "Checking mounted directories..."
+              docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/
+              echo ""
+              docker exec clickhouse-test ls -la /etc/clickhouse-server/conf.d/
+              echo ""
+
               echo "Reloading configuration..."
               docker exec clickhouse-test clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
+
+              echo "Waiting 5 seconds for functions to load..."
+              sleep 5
+
               exit 0
             fi
             echo "Attempt $i/30..."
@@ -125,8 +136,19 @@ jobs:
 
       - name: Verify UDF registration
         run: |
-          echo "Checking registered UDF functions..."
-          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE name LIKE '%vin%' OR name LIKE '%array%' OR name LIKE '%wkt%' OR name LIKE '%url%' OR name LIKE '%tiktoken%' OR name LIKE '%phone%' ORDER BY name"
+          echo "=== Checking UDF Registration ==="
+          echo ""
+
+          echo "All custom functions:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name" || echo "No executable functions found"
+
+          echo ""
+          echo "Expected UDFs (searching by name):"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name"
+
+          echo ""
+          echo "If functions are missing, checking ClickHouse logs for errors:"
+          docker logs clickhouse-test 2>&1 | grep -i "executable\|user_scripts\|function" | tail -20 || echo "No relevant log entries"
 
       - name: Run integration tests
         run: |
@@ -199,16 +221,11 @@ jobs:
           find summaries/ -name "*.md" -exec echo "Found: {}" \; 2>/dev/null || echo "No markdown files found"
           echo ""
 
-          # Header with metadata
+          # Header with metadata (compact)
           cat > pr-comment.md <<EOF
-          # 🧪 ClickHouse UDF Integration Test Results
+          ## 🧪 ClickHouse Integration Tests
 
-          **Workflow Run:** [#${{ github.run_number }}]($WORKFLOW_URL)
-          **Commit:** [\`${COMMIT_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/$COMMIT_SHA)
-          **Triggered by:** @${{ github.actor }}
-          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
-          ---
+          [Workflow #${{ github.run_number }}]($WORKFLOW_URL) • [\`${COMMIT_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/$COMMIT_SHA) • @${{ github.actor }}
 
           EOF
 
@@ -229,16 +246,15 @@ jobs:
               echo "Processing version: $version"
               echo "File: $dir/test-summary.md"
 
-              # Add version header with link to specific job
-              echo "## ClickHouse $version" >> pr-comment.md
-              echo "" >> pr-comment.md
-              echo "**Job Logs:** [View detailed logs]($WORKFLOW_URL)" >> pr-comment.md
+              # Add compact version in collapsible section
+              echo "<details>" >> pr-comment.md
+              echo "<summary><strong>ClickHouse $version</strong> - [View Logs]($WORKFLOW_URL)</summary>" >> pr-comment.md
               echo "" >> pr-comment.md
 
               # Add the detailed summary
               tail -n +2 "$dir/test-summary.md" >> pr-comment.md
               echo "" >> pr-comment.md
-              echo "---" >> pr-comment.md
+              echo "</details>" >> pr-comment.md
               echo "" >> pr-comment.md
 
               # Extract metrics for overall summary (using more robust patterns)
@@ -267,78 +283,43 @@ jobs:
           echo "Passed: $total_passed"
           echo "Failed: $total_failed"
 
-          # Overall summary
+          # Overall summary (compact)
           if [ $tested_versions -gt 0 ] && [ $total_tests -gt 0 ]; then
             success_rate=$(awk "BEGIN {printf \"%.1f\", ($total_passed/$total_tests)*100}")
 
-            cat >> pr-comment.md <<EOF
-          ## 📊 Overall Summary
+            # Determine status emoji
+            if [ $total_failed -eq 0 ]; then
+              status="✅ All tests passed"
+            else
+              status="❌ $total_failed test(s) failed"
+            fi
 
-          | Metric | Value |
-          |--------|-------|
-          | **ClickHouse Versions Tested** | $tested_versions |
-          | **Total Tests** | $total_tests |
-          | **Passed** | ✅ $total_passed |
-          | **Failed** | ❌ $total_failed |
-          | **Success Rate** | $success_rate% |
+            cat >> pr-comment.md <<EOF
+          ### Summary: $status
+
+          **$tested_versions** ClickHouse versions tested • **$total_tests** tests • **$success_rate%** success rate
 
           EOF
           elif [ $tested_versions -gt 0 ] && [ $total_tests -eq 0 ]; then
             cat >> pr-comment.md <<EOF
-          ## ⚠️ Warning
+          ### ⚠️ No test results extracted
 
-          Test summaries were found but no test results could be extracted.
-          This may indicate an issue with the test summary format.
+          Test summaries were found but metrics could not be parsed. [Check logs]($WORKFLOW_URL).
 
           EOF
           else
             cat >> pr-comment.md <<EOF
-          ## ⚠️ Warning
+          ### ⚠️ No test summaries found
 
-          No test summaries were found. The integration tests may not have run successfully.
-          Please check the workflow logs for details.
+          Integration tests may not have run successfully. [Check logs]($WORKFLOW_URL).
 
           EOF
           fi
 
-          # Add footer
-          cat >> pr-comment.md <<'EOF'
+          # Compact footer
+          cat >> pr-comment.md <<EOF
 
-          <details>
-          <summary>📚 Test Details</summary>
-
-          ### Test Coverage
-          This PR was tested against multiple ClickHouse versions to ensure compatibility:
-          - **ClickHouse 25.6** - Latest LTS release
-          - **ClickHouse 25.7** - Stable release
-          - **ClickHouse 25.8** - Latest release
-
-          ### Test Scope
-          - ✅ **UDF Registration** - All functions properly registered in ClickHouse
-          - ✅ **SQL Execution** - Real queries against live ClickHouse instances
-          - ✅ **Data Processing** - Input/output validation for each UDF
-          - ✅ **Error Handling** - Edge cases and error conditions
-
-          ### UDF Modules Tested
-          - `wkt` - Well-Known Text geometry parsing
-          - `vin` - Vehicle Identification Number processing
-          - `url` - URL extraction and detection
-          - `array` - Array manipulation (Top-K algorithms)
-          - `string` - String processing and extraction
-          - `tiktoken` - GPT tokenization
-
-          ### View Full Logs
-          Click the "View detailed logs" links above to see complete test output, including:
-          - ClickHouse server logs
-          - UDF execution traces
-          - SQL query results
-          - Error messages (if any)
-
-          </details>
-
-          ---
-
-          <sub>🤖 Generated by [ClickHouse Integration Tests]($WORKFLOW_URL) • [View Workflow](https://github.com/${{ github.repository }}/blob/main/.github/workflows/clickhouse-integration.yaml)</sub>
+          <sub>🤖 Tested: CH 25.6, 25.7, 25.8 • UDFs: wkt, vin, url, array, string, tiktoken • [View Workflow](https://github.com/${{ github.repository }}/blob/main/.github/workflows/clickhouse-integration.yaml)</sub>
           EOF
 
           echo "=== Generated PR Comment ==="
