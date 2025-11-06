@@ -182,14 +182,34 @@ jobs:
 
       - name: Verify UDF registration
         run: |
-          echo "=== UDF Registration Status ==="
+          echo "=== UDF Registration Diagnostics ==="
           echo ""
 
-          echo "Registered executable functions:"
-          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name"
+          echo "1. Function definition files in /etc/clickhouse-server/:"
+          docker exec clickhouse-test find /etc/clickhouse-server -name "*_function.xml" -type f
 
           echo ""
-          echo "Expected UDFs:"
+          echo "2. ClickHouse config for UDF loading:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name, value FROM system.settings WHERE name LIKE '%user_defined%' FORMAT Vertical" || echo "No UDF settings found"
+
+          echo ""
+          echo "3. Check main config.xml for user_defined_executable_functions_config:"
+          docker exec clickhouse-test grep -A2 -B2 "user_defined_executable_functions_config" /etc/clickhouse-server/config.xml || echo "Not found in main config"
+
+          echo ""
+          echo "4. Sample function definition (array_function.xml):"
+          docker exec clickhouse-test cat /etc/clickhouse-server/array_function.xml || echo "File not found"
+
+          echo ""
+          echo "5. All registered executable functions:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name" || echo "Query failed"
+
+          echo ""
+          echo "6. Check ClickHouse logs for UDF errors:"
+          docker logs clickhouse-test 2>&1 | grep -i "user_defined\|executable.*function\|error.*function" | tail -30 || echo "No relevant log entries"
+
+          echo ""
+          echo "7. Expected UDFs status:"
           docker exec clickhouse-test clickhouse-client --query "SELECT name, origin FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name FORMAT Vertical"
 
       - name: Run integration tests
