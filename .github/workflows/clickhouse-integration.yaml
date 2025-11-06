@@ -114,11 +114,30 @@ jobs:
             -p 8123:8123 \
             -p 9000:9000 \
             -v ${{ github.workspace }}/clickhouse-data/user_scripts:/var/lib/clickhouse/user_scripts \
-            -v ${{ github.workspace }}/clickhouse-data/config:/etc/clickhouse-server/conf.d \
             ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }}
 
           echo "Container started, waiting for initialization..."
-          sleep 5
+          sleep 3
+
+      - name: Deploy UDF configurations
+        run: |
+          echo "Copying XML configuration files to ClickHouse config.d..."
+          for xml_file in ${{ github.workspace }}/clickhouse-data/config/*.xml; do
+            if [ -f "$xml_file" ]; then
+              filename=$(basename "$xml_file")
+              echo "  - Copying $filename"
+              docker cp "$xml_file" clickhouse-test:/etc/clickhouse-server/config.d/
+            fi
+          done
+
+          echo ""
+          echo "Verifying files were copied:"
+          docker exec clickhouse-test ls -lah /etc/clickhouse-server/config.d/*_function.xml || echo "No function XML files found"
+
+          echo ""
+          echo "Setting correct permissions..."
+          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/config.d/*_function.xml 2>/dev/null || true
+          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/config.d/udf_config.xml 2>/dev/null || true
 
       - name: Wait for ClickHouse to be ready
         run: |
@@ -159,36 +178,24 @@ jobs:
           echo "=== Checking UDF Registration ==="
           echo ""
 
-          echo "1. Checking ClickHouse config directory structure:"
-          docker exec clickhouse-test ls -la /etc/clickhouse-server/ | grep ".d$"
+          echo "1. Checking our UDF XML files in config.d:"
+          docker exec clickhouse-test ls -lah /etc/clickhouse-server/config.d/*_function.xml 2>/dev/null || echo "No function XML files in config.d"
 
           echo ""
-          echo "2. Checking if config.d exists and what's in it:"
-          docker exec clickhouse-test ls -la /etc/clickhouse-server/config.d/ 2>/dev/null || echo "config.d directory not found"
+          echo "2. Checking udf_config.xml content:"
+          docker exec clickhouse-test cat /etc/clickhouse-server/config.d/udf_config.xml 2>/dev/null || echo "udf_config.xml not found in config.d"
 
           echo ""
-          echo "3. Checking main config for include paths:"
-          docker exec clickhouse-test cat /etc/clickhouse-server/config.xml | grep -E "<include_from>|<config.d>|<conf.d>|user_defined" | head -10 || echo "No include directives found"
-
-          echo ""
-          echo "4. Checking our mounted XML files:"
-          docker exec clickhouse-test ls -lah /etc/clickhouse-server/conf.d/*.xml
-
-          echo ""
-          echo "5. Checking udf_config.xml content:"
-          docker exec clickhouse-test cat /etc/clickhouse-server/conf.d/udf_config.xml || echo "udf_config.xml not found"
-
-          echo ""
-          echo "6. All custom functions:"
+          echo "3. All registered executable functions:"
           docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name" || echo "No executable functions found"
 
           echo ""
-          echo "7. Expected UDFs (searching by name):"
+          echo "4. Expected UDFs (searching by name):"
           docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name"
 
           echo ""
-          echo "8. ClickHouse logs (grep for errors):"
-          docker logs clickhouse-test 2>&1 | grep -i "error.*function\|error.*executable\|error.*udf\|error.*user_scripts" | tail -20 || echo "No error log entries found"
+          echo "5. If functions missing, check ClickHouse logs:"
+          docker logs clickhouse-test 2>&1 | grep -i "error.*function\|error.*executable\|error.*udf\|warning.*function" | tail -20 || echo "No error/warning log entries found"
 
       - name: Run integration tests
         run: |
