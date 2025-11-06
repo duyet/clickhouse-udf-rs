@@ -1,0 +1,26 @@
+<functions>
+    <!-- URL Functions -->
+    <function>
+        <name>extractUrl</name>
+        <type>executable_pool</type>
+        <command>extract-url</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+
+    <function>
+        <name>hasUrl</name>
+        <type>executable_pool</type>
+        <command>has-url</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+</functions>

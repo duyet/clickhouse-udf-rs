@@ -1,0 +1,38 @@
+<functions>
+    <!-- VIN (Vehicle Identification Number) Functions -->
+    <function>
+        <name>vinCleaner</name>
+        <type>executable_pool</type>
+        <command>vin-cleaner</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+
+    <function>
+        <name>vinManuf</name>
+        <type>executable_pool</type>
+        <command>vin-manuf</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+
+    <function>
+        <name>vinYear</name>
+        <type>executable_pool</type>
+        <command>vin-year</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+</functions>

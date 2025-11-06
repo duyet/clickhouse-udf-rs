@@ -1,0 +1,14 @@
+<functions>
+    <!-- WKT (Well-Known Text) Functions -->
+    <function>
+        <name>readWktLineString</name>
+        <type>executable_pool</type>
+        <command>read-wkt-linestring</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+</functions>

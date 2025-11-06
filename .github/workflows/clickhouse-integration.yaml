@@ -1,0 +1,151 @@
+name: clickhouse-integration
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  integration-test:
+    name: ClickHouse Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      clickhouse:
+        image: clickhouse/clickhouse-server:latest
+        ports:
+          - 8123:8123
+          - 9000:9000
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build all UDF binaries
+        run: cargo build --release
+
+      - name: List built binaries
+        run: |
+          echo "Built binaries:"
+          ls -lh target/release/ | grep -E '^-.*x' | grep -v '\.d$'
+
+      - name: Install ClickHouse client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https ca-certificates dirmngr
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 8919F6BD2B48D754
+          echo "deb https://packages.clickhouse.com/deb stable main" | sudo tee /etc/apt/sources.list.d/clickhouse.list
+          sudo apt-get update
+          sudo apt-get install -y clickhouse-client
+
+      - name: Wait for ClickHouse to be ready
+        run: |
+          for i in {1..30}; do
+            if clickhouse-client --host localhost --port 8123 --query "SELECT 1" > /dev/null 2>&1; then
+              echo "ClickHouse is ready!"
+              break
+            fi
+            echo "Waiting for ClickHouse... ($i/30)"
+            sleep 2
+          done
+
+      - name: Deploy UDF binaries to ClickHouse container
+        run: |
+          # Create user_scripts directory if it doesn't exist
+          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) mkdir -p /var/lib/clickhouse/user_scripts/
+
+          # Copy all UDF binaries to the container
+          for binary in target/release/read-wkt-linestring \
+                        target/release/vin-cleaner \
+                        target/release/vin-manuf \
+                        target/release/vin-year \
+                        target/release/extract-url \
+                        target/release/has-url \
+                        target/release/array-topk \
+                        target/release/extract-phone \
+                        target/release/tiktoken-count \
+                        target/release/tiktoken-encode; do
+            if [ -f "$binary" ]; then
+              echo "Copying $(basename $binary)..."
+              docker cp "$binary" $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest):/var/lib/clickhouse/user_scripts/
+              docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) chmod +x "/var/lib/clickhouse/user_scripts/$(basename $binary)"
+            else
+              echo "Warning: $binary not found"
+            fi
+          done
+
+      - name: Deploy UDF XML configurations
+        run: |
+          # Copy XML configuration files to the container
+          for config in integration-tests/config/*.xml; do
+            if [ -f "$config" ]; then
+              echo "Copying $(basename $config)..."
+              docker cp "$config" $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest):/etc/clickhouse-server/
+            fi
+          done
+
+          # Reload ClickHouse configuration
+          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
+
+      - name: Wait for UDFs to be loaded
+        run: |
+          echo "Waiting for UDFs to be registered..."
+          sleep 5
+
+          echo "Checking registered functions..."
+          clickhouse-client --host localhost --port 8123 --query "SELECT name FROM system.functions WHERE name LIKE '%vin%' OR name LIKE '%array%' OR name LIKE '%wkt%' OR name LIKE '%url%' OR name LIKE '%tiktoken%' OR name LIKE '%phone%' ORDER BY name" || true
+
+      - name: Run integration tests
+        run: |
+          cd integration-tests
+          ./run-tests.sh
+
+      - name: Show ClickHouse logs on failure
+        if: failure()
+        run: |
+          echo "ClickHouse server logs:"
+          docker logs $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) 2>&1 | tail -100
+
+      - name: Debug - List ClickHouse directories
+        if: failure()
+        run: |
+          echo "Contents of /var/lib/clickhouse/user_scripts/:"
+          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) ls -la /var/lib/clickhouse/user_scripts/ || true
+
+          echo "Contents of /etc/clickhouse-server/:"
+          docker exec $(docker ps -q --filter ancestor=clickhouse/clickhouse-server:latest) ls -la /etc/clickhouse-server/*.xml || true
