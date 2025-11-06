@@ -221,8 +221,11 @@ jobs:
           find summaries/ -name "*.md" -exec echo "Found: {}" \; 2>/dev/null || echo "No markdown files found"
           echo ""
 
-          # Header with metadata (compact)
+          # Header with metadata (compact) - with separator for appending
           cat > pr-comment.md <<EOF
+
+          ---
+
           ## 🧪 ClickHouse Integration Tests
 
           [Workflow #${{ github.run_number }}]($WORKFLOW_URL) • [\`${COMMIT_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/$COMMIT_SHA) • @${{ github.actor }}
@@ -346,9 +349,18 @@ jobs:
           echo "=== Generated PR Comment ==="
           cat pr-comment.md
 
-      - name: Post comment to PR
-        uses: peter-evans/create-or-update-comment@v4
+      - name: Find existing Benches report comment
+        id: find-comment
+        uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
+          body-includes: "Benches report:"
+
+      - name: Append to existing comment or create new
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          token: ${{ secrets.DUYETBOT_GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
           body-path: pr-comment.md
-          edit-mode: replace
+          edit-mode: append
