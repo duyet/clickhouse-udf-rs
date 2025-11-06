@@ -44,7 +44,7 @@ integration-tests/
 # Using custom ClickHouse image (recommended)
 docker run -d --name clickhouse-test \
   -p 8123:8123 -p 9000:9000 \
-  ghcr.io/duyet/docker-images:clickhouse_25.2
+  ghcr.io/duyet/docker-images:clickhouse_25.8
 
 # Or use official ClickHouse image
 docker run -d --name clickhouse-test \
@@ -106,9 +106,9 @@ The integration tests run automatically on GitHub Actions via the `clickhouse-in
 ### ClickHouse Versions Tested
 
 The CI pipeline tests against multiple ClickHouse versions using custom images:
-- **ClickHouse 24.12** - `ghcr.io/duyet/docker-images:clickhouse_24.12`
-- **ClickHouse 25.1** - `ghcr.io/duyet/docker-images:clickhouse_25.1`
-- **ClickHouse 25.2** - `ghcr.io/duyet/docker-images:clickhouse_25.2` (latest)
+- **ClickHouse 25.6** - `ghcr.io/duyet/docker-images:clickhouse_25.6`
+- **ClickHouse 25.7** - `ghcr.io/duyet/docker-images:clickhouse_25.7`
+- **ClickHouse 25.8** - `ghcr.io/duyet/docker-images:clickhouse_25.8` (latest)
 
 ### Workflow Steps
 

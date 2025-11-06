@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         clickhouse_version:
-          - "24.12"
-          - "25.1"
-          - "25.2"
+          - "25.6"
+          - "25.7"
+          - "25.8"
 
     services:
       clickhouse:
