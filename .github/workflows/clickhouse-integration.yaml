@@ -122,22 +122,48 @@ jobs:
       - name: Deploy UDF configurations
         run: |
           echo "Copying XML configuration files to ClickHouse config.d..."
+
+          # First, list what we have on the host
+          echo "Files to copy:"
+          ls -la ${{ github.workspace }}/clickhouse-data/config/
+
+          echo ""
+          echo "Current config.d contents before copy:"
+          docker exec clickhouse-test ls -la /etc/clickhouse-server/config.d/
+
+          echo ""
           for xml_file in ${{ github.workspace }}/clickhouse-data/config/*.xml; do
             if [ -f "$xml_file" ]; then
               filename=$(basename "$xml_file")
-              echo "  - Copying $filename"
-              docker cp "$xml_file" clickhouse-test:/etc/clickhouse-server/config.d/
+              echo "Copying $filename..."
+
+              # Copy the file
+              if docker cp "$xml_file" clickhouse-test:/etc/clickhouse-server/config.d/"$filename"; then
+                echo "  ✓ docker cp succeeded"
+
+                # Immediately verify
+                if docker exec clickhouse-test test -f "/etc/clickhouse-server/config.d/$filename"; then
+                  echo "  ✓ File exists in container"
+                  docker exec clickhouse-test ls -lh "/etc/clickhouse-server/config.d/$filename"
+                else
+                  echo "  ✗ File not found after copy!"
+                  exit 1
+                fi
+              else
+                echo "  ✗ docker cp failed!"
+                exit 1
+              fi
             fi
           done
 
           echo ""
-          echo "Verifying files were copied:"
-          docker exec clickhouse-test ls -lah /etc/clickhouse-server/config.d/*_function.xml || echo "No function XML files found"
+          echo "All files in config.d after copy:"
+          docker exec clickhouse-test ls -lah /etc/clickhouse-server/config.d/
 
           echo ""
-          echo "Setting correct permissions..."
-          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/config.d/*_function.xml 2>/dev/null || true
-          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/config.d/udf_config.xml 2>/dev/null || true
+          echo "Setting permissions on UDF files..."
+          docker exec clickhouse-test sh -c 'chown clickhouse:clickhouse /etc/clickhouse-server/config.d/*_function.xml' || echo "Failed to set permissions on function files"
+          docker exec clickhouse-test sh -c 'chown clickhouse:clickhouse /etc/clickhouse-server/config.d/udf_config.xml' || echo "Failed to set permissions on udf_config.xml"
 
       - name: Wait for ClickHouse to be ready
         run: |
