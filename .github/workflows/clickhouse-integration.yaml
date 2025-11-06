@@ -257,18 +257,25 @@ jobs:
                 echo "Extracting metrics from $dir/test-summary.md"
                 cat "$dir/test-summary.md"
 
-                # Try different patterns to extract the numbers
-                passed=$(grep "Passed" "$dir/test-summary.md" | grep -oE '\`[0-9]+\`' | head -1 | tr -d '`' || echo "0")
-                failed=$(grep "Failed" "$dir/test-summary.md" | grep -oE '\`[0-9]+\`' | head -1 | tr -d '`' || echo "0")
-                tests=$(grep "Total Tests" "$dir/test-summary.md" | grep -oE '\`[0-9]+\`' | head -1 | tr -d '`' || echo "0")
+                # Extract numbers from the lines - handle both backticks and plain numbers
+                passed=$(grep "Passed" "$dir/test-summary.md" | grep -oE '[0-9]+' | head -1)
+                failed=$(grep "Failed" "$dir/test-summary.md" | grep -oE '[0-9]+' | head -1)
+                tests=$(grep "Total Tests" "$dir/test-summary.md" | grep -oE '[0-9]+' | head -1)
+
+                # Set defaults if extraction failed
+                passed=${passed:-0}
+                failed=${failed:-0}
+                tests=${tests:-0}
 
                 echo "Extracted: tests=$tests, passed=$passed, failed=$failed"
 
                 # Determine status display
-                if [ "$failed" -eq 0 ]; then
+                if [ "$failed" -eq 0 ] && [ "$tests" -gt 0 ]; then
                   version_status="✅ $passed/$tests pass"
-                else
+                elif [ "$tests" -gt 0 ]; then
                   version_status="❌ $passed/$tests pass, $failed fail"
+                else
+                  version_status="⚠️ no tests found"
                 fi
 
                 total_passed=$((total_passed + passed))
