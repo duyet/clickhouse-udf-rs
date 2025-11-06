@@ -61,29 +61,49 @@ jobs:
           mkdir -p ${{ github.workspace }}/clickhouse-data/user_scripts
           mkdir -p ${{ github.workspace }}/clickhouse-data/config
 
-          # Copy UDF binaries
+          # Copy UDF binaries dynamically
           echo "Copying UDF binaries..."
-          cp target/release/read-wkt-linestring \
-             target/release/vin-cleaner \
-             target/release/vin-manuf \
-             target/release/vin-year \
-             target/release/extract-url \
-             target/release/has-url \
-             target/release/array-topk \
-             target/release/extract-phone \
-             target/release/tiktoken-count \
-             target/release/tiktoken-encode \
-             ${{ github.workspace }}/clickhouse-data/user_scripts/ 2>/dev/null || echo "Some binaries not found, continuing..."
+
+          # Find all executable binaries in target/release/ (excluding build artifacts)
+          # Build artifacts have extensions (.d, .rlib, etc.) or are in subdirectories
+          binary_count=0
+          for binary in target/release/*; do
+            # Skip if not a file
+            if [ ! -f "$binary" ]; then
+              continue
+            fi
+
+            # Skip files with extensions (build artifacts)
+            if [[ "$binary" == *.* ]]; then
+              continue
+            fi
+
+            # Skip if not executable
+            if [ ! -x "$binary" ]; then
+              continue
+            fi
+
+            # Copy the binary
+            echo "  - Copying $(basename "$binary")"
+            cp "$binary" ${{ github.workspace }}/clickhouse-data/user_scripts/
+            binary_count=$((binary_count + 1))
+          done
+
+          echo "Copied $binary_count UDF binaries"
 
           # Make binaries executable
-          chmod +x ${{ github.workspace }}/clickhouse-data/user_scripts/*
+          chmod +x ${{ github.workspace }}/clickhouse-data/user_scripts/* 2>/dev/null || true
 
           # Copy XML configurations
           echo "Copying XML configurations..."
           cp integration-tests/config/*.xml ${{ github.workspace }}/clickhouse-data/config/
 
+          echo ""
           echo "Directory contents:"
+          echo "UDF Binaries:"
           ls -la ${{ github.workspace }}/clickhouse-data/user_scripts/
+          echo ""
+          echo "XML Configs:"
           ls -la ${{ github.workspace }}/clickhouse-data/config/
 
       - name: Start ClickHouse container
