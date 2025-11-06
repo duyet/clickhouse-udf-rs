@@ -37,7 +37,8 @@ jobs:
             target/${{ matrix.build_type }}/string-*
             target/${{ matrix.build_type }}/array-*
             target/${{ matrix.build_type }}/*-wkt-*
-            target/${{ matrix.build_type }}/tiktoken*
+            target/${{ matrix.build_type }}/*-url
+            target/${{ matrix.build_type }}/tiktoken-*
 
   test:
     runs-on: ${{ matrix.os }}
