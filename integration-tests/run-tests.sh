@@ -160,15 +160,11 @@ success_rate=$(awk "BEGIN {printf \"%.1f\", ($passed_tests/$total_tests)*100}")
 # Determine status emoji based on success rate
 if [ "$failed_tests" -eq 0 ]; then
     status_emoji="🎉"
-    status_badge="![Status](https://img.shields.io/badge/Status-PASSED-success?style=for-the-badge)"
 else
     status_emoji="⚠️"
-    status_badge="![Status](https://img.shields.io/badge/Status-FAILED-critical?style=for-the-badge)"
 fi
 
 cat >> "$SUMMARY_FILE" <<EOF
-
-#### $status_badge
 
 | Metric | Value |
 |--------|------:|
