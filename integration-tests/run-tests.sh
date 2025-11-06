@@ -52,26 +52,19 @@ cat > "$SUMMARY_FILE" <<EOF
 
 EOF
 
-# Verify UDF functions are registered
+# Verify UDF functions are registered (console output only, not in report)
 echo "Verifying UDF functions are registered..."
 echo ""
 
-cat >> "$SUMMARY_FILE" <<EOF
-## UDF Registration Status
-
-EOF
-
-# Function to check if UDF exists
+# Function to check if UDF exists (console output only)
 check_udf() {
     local function_name=$1
     if $CLICKHOUSE_CLIENT \
         --query="SELECT name FROM system.functions WHERE name = '$function_name'" 2>/dev/null | grep -q "$function_name"; then
         echo -e "  ✓ ${GREEN}$function_name${NC} registered"
-        echo "- ✅ \`$function_name\`" >> "$SUMMARY_FILE"
         return 0
     else
         echo -e "  ✗ ${RED}$function_name${NC} not found"
-        echo "- ❌ \`$function_name\` (not found)" >> "$SUMMARY_FILE"
         return 1
     fi
 }

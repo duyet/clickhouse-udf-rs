@@ -246,19 +246,13 @@ jobs:
               echo "Processing version: $version"
               echo "File: $dir/test-summary.md"
 
-              # Add compact version in collapsible section
-              echo "<details>" >> pr-comment.md
-              echo "<summary><strong>ClickHouse $version</strong> - [View Logs]($WORKFLOW_URL)</summary>" >> pr-comment.md
-              echo "" >> pr-comment.md
-
-              # Add the detailed summary
-              tail -n +2 "$dir/test-summary.md" >> pr-comment.md
-              echo "" >> pr-comment.md
-              echo "</details>" >> pr-comment.md
-              echo "" >> pr-comment.md
-
-              # Extract metrics for overall summary (using more robust patterns)
+              # Extract metrics first (using more robust patterns)
               # Look for the metrics in the table format
+              passed=0
+              failed=0
+              tests=0
+              version_status=""
+
               if grep -q "Passed" "$dir/test-summary.md"; then
                 echo "Extracting metrics from $dir/test-summary.md"
                 cat "$dir/test-summary.md"
@@ -270,10 +264,30 @@ jobs:
 
                 echo "Extracted: tests=$tests, passed=$passed, failed=$failed"
 
+                # Determine status display
+                if [ "$failed" -eq 0 ]; then
+                  version_status="✅ $passed/$tests pass"
+                else
+                  version_status="❌ $passed/$tests pass, $failed fail"
+                fi
+
                 total_passed=$((total_passed + passed))
                 total_failed=$((total_failed + failed))
                 total_tests=$((total_tests + tests))
+              else
+                version_status="⚠️ no results"
               fi
+
+              # Add compact version in collapsible section with test counts
+              echo "<details>" >> pr-comment.md
+              echo "<summary><strong>ClickHouse $version</strong> ($version_status) - [View Logs]($WORKFLOW_URL)</summary>" >> pr-comment.md
+              echo "" >> pr-comment.md
+
+              # Add the detailed summary
+              tail -n +2 "$dir/test-summary.md" >> pr-comment.md
+              echo "" >> pr-comment.md
+              echo "</details>" >> pr-comment.md
+              echo "" >> pr-comment.md
             fi
           done
 
