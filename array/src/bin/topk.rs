@@ -1,5 +1,5 @@
 use anyhow::Result;
-use shared::io::{args, process_stdin, ProcessFn};
+use shared::io::{ProcessFn, args, process_stdin};
 use std::boxed::Box;
 use topk::FilteredSpaceSaving;
 
@@ -34,7 +34,11 @@ fn topk_fn(k: usize) -> ProcessFn {
                 .then_with(|| a.0.cmp(&b.0))
         });
 
-        let topk_result_array = topk_result.iter().map(|i| i.0).collect::<Vec<&str>>();
+        let topk_result_array = topk_result
+            .iter()
+            .take(k)
+            .map(|i| i.0)
+            .collect::<Vec<&str>>();
 
         Some(format!("[{}]", topk_result_array.join(",")))
     })

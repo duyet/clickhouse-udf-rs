@@ -1,5 +1,8 @@
 [workspace]
-members = ["wkt", "vin", "shared", "url", "string", "array"]
+members = ["wkt", "vin", "shared", "url", "string", "array", "tiktoken"]
 resolver = "2"
+
+[workspace.package]
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use parse_wkt::parse_wkt::parse_wkt;
 
 fn parse_wkt_benchmark(c: &mut Criterion) {
