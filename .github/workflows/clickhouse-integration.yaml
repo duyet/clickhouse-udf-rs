@@ -122,24 +122,24 @@ jobs:
       - name: Deploy UDF function definitions
         run: |
           echo "Deploying UDF function definitions..."
-          echo "ClickHouse is already configured to load: /etc/clickhouse-server/*_function.xml"
+          echo "Target: /etc/clickhouse-server/*_function.xml"
           echo ""
 
           for xml_file in ${{ github.workspace }}/clickhouse-data/config/*_function.xml; do
             if [ -f "$xml_file" ]; then
               filename=$(basename "$xml_file")
+              docker cp "$xml_file" "clickhouse-test:/etc/clickhouse-server/$filename"
               echo "  ✓ $filename"
-              docker cp "$xml_file" clickhouse-test:/etc/clickhouse-server/
             fi
           done
 
           echo ""
-          echo "Setting permissions..."
-          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/*_function.xml
-
-          echo ""
           echo "Deployed function definitions:"
           docker exec clickhouse-test ls -lh /etc/clickhouse-server/*_function.xml
+
+          echo ""
+          echo "Setting ownership..."
+          docker exec clickhouse-test chown clickhouse:clickhouse /etc/clickhouse-server/*_function.xml
 
       - name: Wait for ClickHouse to be ready
         run: |
