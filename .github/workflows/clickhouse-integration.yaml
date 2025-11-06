@@ -148,6 +148,14 @@ jobs:
           echo ""
           echo "✓ All function definitions deployed successfully"
 
+      - name: Restart ClickHouse to load function definitions
+        run: |
+          echo "Restarting ClickHouse to load function definitions..."
+          docker restart clickhouse-test
+
+          echo "Waiting for ClickHouse to restart..."
+          sleep 5
+
       - name: Wait for ClickHouse to be ready
         run: |
           echo "Waiting for ClickHouse to be ready..."
@@ -162,12 +170,6 @@ jobs:
               echo "Verifying UDF binaries..."
               docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | head -15
               echo ""
-
-              echo "Reloading configuration..."
-              docker exec clickhouse-test clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
-
-              echo "Waiting 5 seconds for functions to load..."
-              sleep 5
 
               exit 0
             fi
