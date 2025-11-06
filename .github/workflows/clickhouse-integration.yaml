@@ -287,7 +287,7 @@ jobs:
 
               # Add compact version in collapsible section with test counts
               echo "<details>" >> pr-comment.md
-              echo "<summary><strong>ClickHouse $version</strong> ($version_status) - [View Logs]($WORKFLOW_URL)</summary>" >> pr-comment.md
+              echo "<summary><strong>ClickHouse $version</strong> ($version_status) - <a href=\"$WORKFLOW_URL\">View Logs</a></summary>" >> pr-comment.md
               echo "" >> pr-comment.md
 
               # Add the detailed summary
