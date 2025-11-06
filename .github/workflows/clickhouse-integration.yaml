@@ -76,19 +76,54 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clickhouse-client
 
+      - name: Debug - Check service container status
+        run: |
+          echo "=== Docker containers ==="
+          docker ps -a
+
+          echo ""
+          echo "=== Service container details ==="
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "ERROR: No container found for clickhouse_${{ matrix.clickhouse_version }}"
+            echo "Trying to find any ClickHouse containers:"
+            docker ps -a | grep clickhouse || echo "No ClickHouse containers found"
+            exit 1
+          fi
+
+          echo "Container ID: $CONTAINER_ID"
+          docker inspect $CONTAINER_ID --format='{{.State.Status}}: {{.State.Health.Status}}'
+
+          echo ""
+          echo "=== ClickHouse logs (last 50 lines) ==="
+          docker logs $CONTAINER_ID 2>&1 | tail -50
+
+          echo ""
+          echo "=== Network connectivity test ==="
+          curl -v http://localhost:8123/ || echo "HTTP connection failed"
+
       - name: Wait for ClickHouse to be ready
         run: |
-          echo "Waiting for ClickHouse to be ready..."
-          for i in {1..60}; do
+          echo "Service container reported healthy, but ClickHouse may still be initializing..."
+          echo "Waiting an additional 10 seconds for full startup..."
+          sleep 10
+
+          echo "Now testing ClickHouse connection..."
+          for i in {1..30}; do
             if clickhouse-client --host localhost --port 8123 --query "SELECT 1" > /dev/null 2>&1; then
-              echo "ClickHouse is ready!"
+              echo "✓ ClickHouse is ready!"
+              echo "Version:"
               clickhouse-client --host localhost --port 8123 --query "SELECT version()"
               exit 0
             fi
-            echo "Attempt $i/60..."
-            sleep 3
+            echo "Attempt $i/30..."
+            sleep 2
           done
+
           echo "ERROR: ClickHouse did not become ready in time"
+          echo "Checking container logs:"
+          CONTAINER_ID=$(docker ps -q --filter ancestor=ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }})
+          docker logs $CONTAINER_ID 2>&1 | tail -100
           exit 1
 
       - name: Deploy UDF binaries to ClickHouse container
