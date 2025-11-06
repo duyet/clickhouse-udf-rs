@@ -1,5 +1,4 @@
-<clickhouse>
-    <functions>
+<functions>
         <!-- VIN (Vehicle Identification Number) Functions -->
         <function>
             <name>vinCleaner</name>
@@ -37,4 +36,3 @@
             <return_type>String</return_type>
         </function>
     </functions>
-</clickhouse>

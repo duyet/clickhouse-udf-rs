@@ -171,6 +171,10 @@ jobs:
               docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | head -15
               echo ""
 
+              echo "Quick check - any executable functions loaded?"
+              docker exec clickhouse-test clickhouse-client --query "SELECT COUNT(*) as count, origin FROM system.functions GROUP BY origin"
+              echo ""
+
               exit 0
             fi
             echo "Attempt $i/30..."

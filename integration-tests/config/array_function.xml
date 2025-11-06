@@ -1,5 +1,4 @@
-<clickhouse>
-    <functions>
+<functions>
         <!-- Array Functions -->
         <function>
             <name>arrayTopK</name>
@@ -13,4 +12,3 @@
             <return_type>String</return_type>
         </function>
     </functions>
-</clickhouse>

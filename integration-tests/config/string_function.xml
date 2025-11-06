@@ -1,5 +1,4 @@
-<clickhouse>
-    <functions>
+<functions>
         <!-- String Functions -->
         <function>
             <name>stringFormat</name>
@@ -25,4 +24,3 @@
             <return_type>String</return_type>
         </function>
     </functions>
-</clickhouse>
