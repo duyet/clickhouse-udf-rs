@@ -26,9 +26,9 @@ fn topk_fn(k: usize) -> ProcessFn {
 
         let mut topk_result = topk.into_sorted_vec();
 
-        // Stable sort: first by frequency (descending), then by value (ascending) for deterministic ordering
-        // Using sort_stable_by to ensure deterministic results when frequencies are equal
-        topk_result.sort_stable_by(|a, b| {
+        // Stable sort by frequency (descending), then by value (ascending) for deterministic ordering
+        // Note: sort_by() is stable by default in Rust
+        topk_result.sort_by(|a, b| {
             b.1.estimated_count()
                 .cmp(&a.1.estimated_count())
                 .then_with(|| a.0.cmp(&b.0))
