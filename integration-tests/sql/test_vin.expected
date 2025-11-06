@@ -1,0 +1,10 @@
+Test 1: vinCleaner uppercase	1G1ND52F14M712344
+Test 2: vinCleaner lowercase	1G1ND52F14M712344
+Test 3: vinCleaner with extra text	1G1ND52F14M712344
+Test 4: vinCleaner with spaces	1G1ND52F14M712344
+Test 5: vinManuf Chevrolet	General Motors USA
+Test 6: vinManuf Mazda	Mazda
+Test 7: vinManuf Ford	Ford Motor Company
+Test 8: vinYear 2014	2014
+Test 9: vinYear 2012	2012
+Test 10: vinYear 2011	2011
