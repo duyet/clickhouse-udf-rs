@@ -8,15 +8,14 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-CLICKHOUSE_HOST="${CLICKHOUSE_HOST:-localhost}"
-CLICKHOUSE_PORT="${CLICKHOUSE_PORT:-8123}"
-CLICKHOUSE_CLIENT="${CLICKHOUSE_CLIENT:-clickhouse-client}"
+CLICKHOUSE_CONTAINER="${CLICKHOUSE_CONTAINER:-clickhouse-test}"
+CLICKHOUSE_CLIENT="${CLICKHOUSE_CLIENT:-docker exec $CLICKHOUSE_CONTAINER clickhouse-client}"
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "================================================"
 echo "ClickHouse UDF Integration Tests"
 echo "================================================"
-echo "Host: $CLICKHOUSE_HOST:$CLICKHOUSE_PORT"
+echo "Container: $CLICKHOUSE_CONTAINER"
 echo "Test Directory: $TEST_DIR"
 echo ""
 
@@ -24,7 +23,7 @@ echo ""
 echo -n "Waiting for ClickHouse to be ready..."
 max_attempts=30
 attempt=0
-until $CLICKHOUSE_CLIENT --host="$CLICKHOUSE_HOST" --port="$CLICKHOUSE_PORT" --query="SELECT 1" > /dev/null 2>&1; do
+until $CLICKHOUSE_CLIENT --query="SELECT 1" > /dev/null 2>&1; do
     if [ $attempt -eq $max_attempts ]; then
         echo -e "${RED}FAILED${NC}"
         echo "ClickHouse did not become ready in time"
@@ -44,7 +43,7 @@ echo ""
 # Function to check if UDF exists
 check_udf() {
     local function_name=$1
-    if $CLICKHOUSE_CLIENT --host="$CLICKHOUSE_HOST" --port="$CLICKHOUSE_PORT" \
+    if $CLICKHOUSE_CLIENT \
         --query="SELECT name FROM system.functions WHERE name = '$function_name'" 2>/dev/null | grep -q "$function_name"; then
         echo -e "  ✓ ${GREEN}$function_name${NC} registered"
         return 0
@@ -103,8 +102,7 @@ for test_file in "$TEST_DIR/sql"/test_*.sql; do
     echo -n "Running $test_name... "
 
     # Run the test and capture output
-    if output=$($CLICKHOUSE_CLIENT --host="$CLICKHOUSE_HOST" --port="$CLICKHOUSE_PORT" \
-        --multiquery < "$test_file" 2>&1); then
+    if output=$($CLICKHOUSE_CLIENT --multiquery < "$test_file" 2>&1); then
         echo -e "${GREEN}PASSED${NC}"
         passed_tests=$((passed_tests + 1))
 

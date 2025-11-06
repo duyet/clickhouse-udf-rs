@@ -100,23 +100,15 @@ jobs:
           echo "Container started, waiting for initialization..."
           sleep 5
 
-      - name: Install ClickHouse client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y apt-transport-https ca-certificates dirmngr
-          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 8919F6BD2B48D754
-          echo "deb https://packages.clickhouse.com/deb stable main" | sudo tee /etc/apt/sources.list.d/clickhouse.list
-          sudo apt-get update
-          sudo apt-get install -y clickhouse-client
-
       - name: Wait for ClickHouse to be ready
         run: |
           echo "Waiting for ClickHouse to be ready..."
           for i in {1..30}; do
-            if clickhouse-client --host localhost --port 8123 --query "SELECT 1" > /dev/null 2>&1; then
+            if docker exec clickhouse-test clickhouse-client --query "SELECT 1" > /dev/null 2>&1; then
               echo "✓ ClickHouse is ready!"
+              echo ""
               echo "Version:"
-              clickhouse-client --host localhost --port 8123 --query "SELECT version()"
+              docker exec clickhouse-test clickhouse-client --query "SELECT version()"
               echo ""
               echo "Reloading configuration..."
               docker exec clickhouse-test clickhouse-client --query "SYSTEM RELOAD CONFIG" || true
@@ -134,7 +126,7 @@ jobs:
       - name: Verify UDF registration
         run: |
           echo "Checking registered UDF functions..."
-          clickhouse-client --host localhost --port 8123 --query "SELECT name FROM system.functions WHERE name LIKE '%vin%' OR name LIKE '%array%' OR name LIKE '%wkt%' OR name LIKE '%url%' OR name LIKE '%tiktoken%' OR name LIKE '%phone%' ORDER BY name"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE name LIKE '%vin%' OR name LIKE '%array%' OR name LIKE '%wkt%' OR name LIKE '%url%' OR name LIKE '%tiktoken%' OR name LIKE '%phone%' ORDER BY name"
 
       - name: Run integration tests
         run: |
