@@ -159,10 +159,8 @@ jobs:
               docker exec clickhouse-test clickhouse-client --query "SELECT version()"
               echo ""
 
-              echo "Checking mounted directories..."
-              docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/
-              echo ""
-              docker exec clickhouse-test ls -la /etc/clickhouse-server/conf.d/
+              echo "Verifying UDF binaries..."
+              docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | head -15
               echo ""
 
               echo "Reloading configuration..."
