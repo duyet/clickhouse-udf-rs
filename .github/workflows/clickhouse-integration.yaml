@@ -218,6 +218,29 @@ jobs:
           echo "7. Expected UDFs status:"
           docker exec clickhouse-test clickhouse-client --query "SELECT name, origin FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name FORMAT Vertical"
 
+          echo ""
+          echo "8. Manual UDF binary execution test:"
+          echo "Testing array-topk binary directly..."
+          # Test if binary exists and is executable
+          if docker exec clickhouse-test test -x /var/lib/clickhouse/user_scripts/array-topk; then
+            echo "  ✓ Binary is executable"
+            # Try to execute it with sample input
+            echo "  Testing with sample input: '1\t2\t3\t1\t2\t1'"
+            if result=$(docker exec clickhouse-test bash -c 'echo -e "1\t2\t3\t1\t2\t1" | /var/lib/clickhouse/user_scripts/array-topk 3' 2>&1); then
+              echo "  ✓ Binary executed successfully"
+              echo "  Output: '$result'"
+            else
+              echo "  ✗ Binary execution failed"
+              echo "  Error: $result"
+            fi
+          else
+            echo "  ✗ Binary not found or not executable"
+          fi
+
+          echo ""
+          echo "9. Check binary permissions and ownership:"
+          docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | grep -E "(array-topk|vin-cleaner|extract-url)" || echo "Sample binaries not found"
+
       - name: Run integration tests
         run: |
           cd integration-tests
