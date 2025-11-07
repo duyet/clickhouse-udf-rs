@@ -220,18 +220,29 @@ jobs:
 
           echo ""
           echo "8. Manual UDF binary execution test:"
-          echo "Testing array-topk binary directly..."
+          echo "Testing array-topk binary directly with correct format..."
           # Test if binary exists and is executable
           if docker exec clickhouse-test test -x /var/lib/clickhouse/user_scripts/array-topk; then
             echo "  ✓ Binary is executable"
-            # Try to execute it with sample input
-            echo "  Testing with sample input: '1\t2\t3\t1\t2\t1'"
-            if result=$(docker exec clickhouse-test bash -c 'echo -e "1\t2\t3\t1\t2\t1" | /var/lib/clickhouse/user_scripts/array-topk 3' 2>&1); then
+
+            # Test with ClickHouse array format (comma-separated in brackets)
+            echo "  Test 1: Sending '[1,1,2,2,3]' with k=3"
+            if result=$(docker exec clickhouse-test bash -c 'echo "[1,1,2,2,3]" | /var/lib/clickhouse/user_scripts/array-topk 3' 2>&1); then
               echo "  ✓ Binary executed successfully"
               echo "  Output: '$result'"
             else
               echo "  ✗ Binary execution failed"
               echo "  Error: $result"
+            fi
+
+            # Test with different input
+            echo "  Test 2: Sending '[1,1,2,2,2]' with k=2"
+            if result2=$(docker exec clickhouse-test bash -c 'echo "[1,1,2,2,2]" | /var/lib/clickhouse/user_scripts/array-topk 2' 2>&1); then
+              echo "  ✓ Binary executed successfully"
+              echo "  Output: '$result2'"
+            else
+              echo "  ✗ Binary execution failed"
+              echo "  Error: $result2"
             fi
           else
             echo "  ✗ Binary not found or not executable"
