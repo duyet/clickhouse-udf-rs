@@ -241,6 +241,23 @@ jobs:
           echo "9. Check binary permissions and ownership:"
           docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | grep -E "(array-topk|vin-cleaner|extract-url)" || echo "Sample binaries not found"
 
+          echo ""
+          echo "10. Test actual UDF query execution:"
+          echo "Testing arrayTopK(3)([1,1,2,2,3])..."
+          docker exec clickhouse-test clickhouse-client --query "SELECT arrayTopK(3)([1,1,2,2,3]) AS result" || echo "Query failed"
+
+          echo ""
+          echo "Testing with FORMAT JSON to see full response:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT 'test' AS label, arrayTopK(3)([1,1,2,2,3]) AS result FORMAT JSON" || echo "Query failed"
+
+          echo ""
+          echo "Testing vinCleaner..."
+          docker exec clickhouse-test clickhouse-client --query "SELECT vinCleaner('1g1nd52f14m712344') AS result" || echo "Query failed"
+
+          echo ""
+          echo "11. Check ClickHouse server logs for execution errors:"
+          docker logs clickhouse-test 2>&1 | tail -50
+
       - name: Run integration tests
         run: |
           cd integration-tests
