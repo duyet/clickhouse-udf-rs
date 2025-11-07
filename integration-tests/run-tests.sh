@@ -158,11 +158,30 @@ for test_file in "$TEST_DIR/sql"/test_*.sql; do
                 echo -e "${RED}FAILED (output mismatch)${NC}"
                 failed_tests=$((failed_tests + 1))
                 failed_test_names+=("$test_name")
-                failed_test_outputs["$test_name"]="Output mismatch:\n\n$diff_output"
-                echo "| $test_name | ❌ FAILED (output mismatch) |" >> "$SUMMARY_FILE"
-                echo "Output mismatch:"
+
+                # Print expected output
+                echo ""
+                echo -e "${BLUE}Expected output:${NC}"
+                echo "---"
+                echo "$expected_output"
+                echo "---"
+                echo ""
+
+                # Print actual output
+                echo -e "${BLUE}Actual output:${NC}"
+                echo "---"
+                echo "$output"
+                echo "---"
+                echo ""
+
+                # Print diff
+                echo -e "${BLUE}Diff:${NC}"
                 echo "$diff_output"
                 echo ""
+
+                # Store for summary
+                failed_test_outputs["$test_name"]="Expected:\n$expected_output\n\nActual:\n$output\n\nDiff:\n$diff_output"
+                echo "| $test_name | ❌ FAILED (output mismatch) |" >> "$SUMMARY_FILE"
             fi
         else
             # No expected file, just check if command succeeded
