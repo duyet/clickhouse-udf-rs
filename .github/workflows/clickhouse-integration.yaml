@@ -246,28 +246,32 @@ jobs:
 
           echo ""
           echo "Query: SELECT 'Test 1' AS test_name, arrayTopK(3)([1,1,2,2,3]) AS result"
+          set +e  # Temporarily disable exit on error
           output=$(docker exec clickhouse-test clickhouse-client --query "SELECT 'Test 1' AS test_name, arrayTopK(3)([1,1,2,2,3]) AS result" 2>&1)
           exit_code=$?
+          set -e  # Re-enable exit on error
           echo "Exit code: $exit_code"
           echo "Output (between ---markers---):"
           echo "---START---"
           echo "$output"
           echo "---END---"
           echo "Output length: ${#output} chars"
-          echo "Output hex dump (first 100 bytes):"
-          echo "$output" | head -c 100 | xxd || echo "$output" | head -c 100 | od -A x -t x1z -v
 
           echo ""
           echo "Query: SELECT vinCleaner('1g1nd52f14m712344') AS result"
+          set +e
           output2=$(docker exec clickhouse-test clickhouse-client --query "SELECT vinCleaner('1g1nd52f14m712344') AS result" 2>&1)
           exit_code2=$?
+          set -e
           echo "Exit code: $exit_code2"
           echo "Output: '$output2'"
           echo "Output length: ${#output2} chars"
 
           echo ""
           echo "Testing exact query from test_array.sql:"
+          set +e
           docker exec clickhouse-test clickhouse-client --query "SELECT 'Test 1: arrayTopK(3)' AS test_name, arrayTopK(3)([1, 1, 2, 2, 3, 4, 5]) AS result" 2>&1 | cat -A
+          set -e
 
           echo ""
           echo "11. Check ClickHouse server logs for execution errors:"
