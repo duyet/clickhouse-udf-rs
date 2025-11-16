@@ -1,12 +1,54 @@
 use std::io::{self, BufRead, Write};
 
+/// Type alias for the processing function used by UDFs.
+///
+/// The function takes a string slice as input and returns an optional String.
+/// Returning `None` indicates a processing error for that input.
 pub type ProcessFn = Box<dyn Fn(&str) -> Option<String>>;
 
+/// Retrieves command-line arguments excluding the program name.
+///
+/// # Returns
+///
+/// A vector of command-line arguments (excluding args[0] which is the program name).
+///
+/// # Examples
+///
+/// ```ignore
+/// let args = shared::io::args();
+/// if let Some(first_arg) = args.first() {
+///     println!("First argument: {}", first_arg);
+/// }
+/// ```
 pub fn args() -> Vec<String> {
     let args: Vec<String> = std::env::args().collect();
     args[1..].to_vec()
 }
 
+/// Processes stdin line-by-line using the provided processing function.
+///
+/// This is the standard UDF processing mode. Each line is read from stdin,
+/// processed by the provided function, and the result is written to stdout.
+/// Errors during reading or processing are logged to stderr and processing continues.
+///
+/// # Arguments
+///
+/// * `f` - A boxed function that takes a string slice and returns an optional String.
+///         Return `None` to indicate processing failure for a specific line.
+///
+/// # Examples
+///
+/// ```ignore
+/// use shared::io::{process_stdin, ProcessFn};
+///
+/// fn uppercase(s: &str) -> Option<String> {
+///     Some(s.to_uppercase())
+/// }
+///
+/// fn main() {
+///     process_stdin(Box::new(uppercase));
+/// }
+/// ```
 pub fn process_stdin(f: ProcessFn) {
     let stdin = io::stdin();
     let mut line_number = 0;
@@ -40,6 +82,60 @@ pub fn process_stdin(f: ProcessFn) {
     }
 }
 
+/// Processes stdin in ClickHouse chunk mode with chunk headers.
+///
+/// This mode is used when ClickHouse sends data in batches with a chunk header
+/// indicating the number of lines in each chunk. The format is:
+/// - First line: number of items in the chunk (as a decimal number)
+/// - Following N lines: the actual data to process
+/// - After processing N lines, stdout is flushed
+/// - Repeat for next chunk
+///
+/// This mode is enabled in ClickHouse UDF configuration with:
+/// `<send_chunk_header>1</send_chunk_header>`
+///
+/// # Arguments
+///
+/// * `f` - A boxed function that takes a string slice and returns an optional String.
+///         Return `None` to indicate processing failure for a specific line.
+///
+/// # Examples
+///
+/// ```ignore
+/// use shared::io::{process_stdin_send_chunk_header, ProcessFn};
+///
+/// fn uppercase(s: &str) -> Option<String> {
+///     Some(s.to_uppercase())
+/// }
+///
+/// fn main() {
+///     process_stdin_send_chunk_header(Box::new(uppercase));
+/// }
+/// ```
+///
+/// # Protocol
+///
+/// Input format:
+/// ```text
+/// 3
+/// hello
+/// world
+/// test
+/// 2
+/// foo
+/// bar
+/// ```
+///
+/// Output format (after processing each chunk):
+/// ```text
+/// HELLO
+/// WORLD
+/// TEST
+/// <flush>
+/// FOO
+/// BAR
+/// <flush>
+/// ```
 pub fn process_stdin_send_chunk_header(f: ProcessFn) {
     let stdin = io::stdin();
 

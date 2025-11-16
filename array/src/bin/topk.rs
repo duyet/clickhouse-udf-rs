@@ -1,5 +1,5 @@
 use anyhow::Result;
-use shared::io::{ProcessFn, args, process_stdin};
+use shared::io::{args, process_stdin, ProcessFn};
 use std::boxed::Box;
 use topk::FilteredSpaceSaving;
 

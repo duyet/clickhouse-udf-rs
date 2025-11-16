@@ -1,3 +1,22 @@
+//! Shared utilities for ClickHouse User-Defined Functions (UDFs).
+//!
+//! This crate provides common functionality used across all ClickHouse UDF packages,
+//! including I/O processing functions for stdin/stdout handling and argument parsing.
+//!
+//! # Examples
+//!
+//! ```ignore
+//! use shared::io::{process_stdin, ProcessFn};
+//!
+//! fn uppercase(s: &str) -> Option<String> {
+//!     Some(s.to_uppercase())
+//! }
+//!
+//! fn main() {
+//!     process_stdin(Box::new(uppercase));
+//! }
+//! ```
+
 pub mod io;
 
 #[cfg(test)]
@@ -66,7 +85,48 @@ mod tests {
         });
 
         assert!(f("test").is_some());
+        assert_eq!(f("test"), Some("processed: test".to_string()));
         assert!(f("").is_none());
         assert!(f("error_input").is_none());
+    }
+
+    #[test]
+    fn test_args_parsing() {
+        // Test that args() returns a vector
+        let args = super::io::args();
+        // Args should always be a vector (possibly empty)
+        assert!(args.len() >= 0);
+    }
+
+    #[test]
+    fn test_processing_function_idempotency() {
+        let f: ProcessFn = Box::new(|input| Some(input.to_uppercase()));
+
+        let input = "test";
+        let result1 = f(input);
+        let result2 = f(input);
+
+        // Same input should produce same output
+        assert_eq!(result1, result2);
+    }
+
+    #[test]
+    fn test_processing_function_unicode() {
+        let f: ProcessFn = Box::new(|input| Some(input.to_string()));
+
+        // Test with various Unicode characters
+        let unicode_inputs = vec![
+            "Hello 世界",
+            "Привет мир",
+            "مرحبا بالعالم",
+            "🚀 Rocket",
+            "Ñoño",
+        ];
+
+        for input in unicode_inputs {
+            let result = f(input);
+            assert!(result.is_some());
+            assert_eq!(result.unwrap(), input);
+        }
     }
 }

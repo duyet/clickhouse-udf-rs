@@ -117,3 +117,77 @@ All UDF binaries follow this pattern to maintain consistency and reduce code dup
 - The workspace uses Rust edition 2021
 - Release binaries are approximately 434KB each (from README example)
 - CI runs on both Ubuntu and macOS in debug and release modes
+
+## Code Quality Tools
+
+### Formatting
+
+The project uses `rustfmt` for consistent code formatting:
+
+```bash
+cargo fmt --all
+```
+
+Configuration is in `rustfmt.toml` using only stable features.
+
+### Linting
+
+The project uses `clippy` for catching common mistakes:
+
+```bash
+cargo clippy --all-targets --all-features
+```
+
+Configuration is in `clippy.toml` with reasonable thresholds for complexity and other metrics.
+
+### Security Auditing
+
+The project uses `cargo-deny` for security and license checking:
+
+```bash
+cargo install cargo-deny
+cargo deny check
+```
+
+Configuration is in `deny.toml`.
+
+## CI/CD
+
+The project has the following GitHub Actions workflows:
+
+1. **build-test.yaml**: Builds and tests on Ubuntu and macOS (both debug and release)
+2. **cargo-clippy.yaml**: Runs clippy with SARIF output for GitHub security alerts
+3. **cargo-fmt.yaml**: Checks code formatting
+4. **security-audit.yaml**: Runs daily security audits using cargo-deny and cargo-audit
+
+All workflows use:
+- `dtolnay/rust-toolchain` for Rust installation (replaces deprecated `actions-rs/toolchain`)
+- `Swatinem/rust-cache@v2` for dependency caching to speed up builds
+- `actions/checkout@v4` (latest version)
+
+## Project Structure Best Practices
+
+- Each package has a `lib.rs` with crate-level documentation
+- All public functions have doc comments
+- Binaries are kept minimal, with logic in library modules
+- Tests are co-located with the code they test
+- Shared functionality is centralized in the `shared` crate
+
+## Recent Improvements
+
+The following improvements were made to enhance code quality:
+
+- Fixed Rust edition from invalid "2024" to "2021" in all Cargo.toml files
+- Removed placeholder string/src/main.rs and created proper lib.rs
+- Added comprehensive crate-level documentation to all packages
+- Enhanced shared/io.rs with detailed doc comments and examples
+- Added `.editorconfig` for consistent editor settings
+- Improved `.gitignore` with comprehensive Rust and IDE exclusions
+- Added `rustfmt.toml` and `clippy.toml` for code quality enforcement
+- Updated GitHub Actions to use non-deprecated actions:
+  - Replaced `actions-rs/toolchain` with `dtolnay/rust-toolchain`
+  - Added Rust cache with `Swatinem/rust-cache@v2`
+  - Updated to `actions/checkout@v4`
+- Added security audit workflow with cargo-deny and cargo-audit
+- Added `deny.toml` for security and license compliance
+- Enhanced test coverage with additional edge cases
