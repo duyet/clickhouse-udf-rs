@@ -1,31 +1,40 @@
-# ClickHouse UDF written in Rust 
+# ClickHouse UDF written in Rust
 
-Collection of some useful UDFs for ClickHouse written in Rust.
+[![Build Status](https://github.com/duyet/clickhouse-udf-rs/workflows/build-test/badge.svg)](https://github.com/duyet/clickhouse-udf-rs/actions)
+[![Clippy](https://github.com/duyet/clickhouse-udf-rs/workflows/cargo-clippy/badge.svg)](https://github.com/duyet/clickhouse-udf-rs/actions)
+[![rustfmt](https://github.com/duyet/clickhouse-udf-rs/workflows/cargo-fmt/badge.svg)](https://github.com/duyet/clickhouse-udf-rs/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Compile into binary
+Collection of high-performance UDFs (User-Defined Functions) for ClickHouse written in Rust.
+
+## Features
+
+- 🚀 **High Performance** - Compiled Rust binaries for maximum speed
+- 🔒 **Type Safe** - Rust's type system prevents common errors
+- 📦 **Multiple UDF Packages** - VIN parsing, URL extraction, array operations, and more
+- 🧪 **Well Tested** - Comprehensive test coverage
+- 📚 **Well Documented** - Inline documentation and examples
+
+## Quick Start
 
 ```bash
-$ cargo build --release
+# Build all UDFs in release mode
+cargo build --release
 
-$ ls -lhp target/release | grep -v '/\|\.d'
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 read-wkt-linestring
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-cleaner
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-cleaner-chunk-header
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-manuf
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-manuf-chunk-header
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-year
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 vin-year-chunk-header
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-url
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 has-url
--rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 array-topk
-
+# List built binaries
+ls -lhp target/release | grep -v '/\|\.d'
 ```
 
-1. [wkt](#1-wkt)
-2. [vin](#2-vin)
-3. [url](#3-url)
-4. [array](#4-array)
+## Available UDFs
 
+1. [wkt](#1-wkt) - Well-Known Text geometry parsing
+2. [vin](#2-vin) - Vehicle Identification Number processing  
+3. [url](#3-url) - URL extraction and detection
+4. [array](#4-array) - Array manipulation (top-k)
+5. [string](#5-string) - String processing
+6. [tiktoken](#6-tiktoken) - GPT tokenization
+
+## Usage
 
 # Usage
 

@@ -16,3 +16,10 @@ anyhow = "1.0.82"
 once_cell = "1.21.3"
 regex = "1.10.4"
 shared = { path = "../shared" }
+
+[[bench]]
+name = "string_bench"
+harness = false
+
+[dev-dependencies]
+criterion = { version = "0.7.0", features = ["html_reports"] }

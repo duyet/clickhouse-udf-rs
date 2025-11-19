@@ -11,6 +11,13 @@ path = 'src/bin/extract-url.rs'
 name = 'has-url'
 path = 'src/bin/has-url.rs'
 
+[[bench]]
+name = "url_bench"
+harness = false
+
 [dependencies]
 anyhow = "1.0.82"
 shared = { path = "../shared" }
+
+[dev-dependencies]
+criterion = { version = "0.7.0", features = ["html_reports"] }
