@@ -68,11 +68,15 @@ mod tests {
     #[test]
     fn test_tiktoken_count_simple() {
         let result = tiktoken_count("Hello, world!");
-        assert!(result.is_some());
+        assert!(
+            result.is_some(),
+            "tiktoken_count should return Some for valid input"
+        );
 
-        let count: usize = result.unwrap().parse().unwrap();
-        assert!(count > 0);
-        assert!(count < 10); // Should be around 4 tokens
+        let count_str = result.expect("tiktoken_count returned None");
+        let count: usize = count_str.parse().expect("Failed to parse count as usize");
+        assert!(count > 0, "Token count should be greater than 0");
+        assert!(count < 10, "Token count should be less than 10"); // Should be around 4 tokens
     }
 
     #[test]
@@ -86,22 +90,32 @@ mod tests {
         let text =
             "The quick brown fox jumps over the lazy dog. This is a test sentence to count tokens.";
         let result = tiktoken_count(text);
-        assert!(result.is_some());
+        assert!(
+            result.is_some(),
+            "tiktoken_count should return Some for long text"
+        );
 
-        let count: usize = result.unwrap().parse().unwrap();
-        assert!(count > 10); // Should be multiple tokens
-        assert!(count < 50);
+        let count_str = result.expect("tiktoken_count returned None");
+        let count: usize = count_str.parse().expect("Failed to parse count as usize");
+        assert!(count > 10, "Token count should be greater than 10"); // Should be multiple tokens
+        assert!(count < 50, "Token count should be less than 50");
     }
 
     #[test]
     fn test_tiktoken_encode_simple() {
         let result = tiktoken_encode("Hello");
-        assert!(result.is_some());
+        assert!(
+            result.is_some(),
+            "tiktoken_encode should return Some for valid input"
+        );
 
-        let encoded = result.unwrap();
-        assert!(!encoded.is_empty());
+        let encoded = result.expect("tiktoken_encode returned None");
+        assert!(!encoded.is_empty(), "Encoded result should not be empty");
         // Should be comma-separated numbers
-        assert!(encoded.chars().all(|c| c.is_ascii_digit() || c == ','));
+        assert!(
+            encoded.chars().all(|c| c.is_ascii_digit() || c == ','),
+            "Encoded result should only contain digits and commas"
+        );
     }
 
     #[test]
@@ -113,11 +127,17 @@ mod tests {
     #[test]
     fn test_tiktoken_encode_multiple_tokens() {
         let result = tiktoken_encode("Hello, world!");
-        assert!(result.is_some());
+        assert!(
+            result.is_some(),
+            "tiktoken_encode should return Some for multi-word input"
+        );
 
-        let encoded = result.unwrap();
+        let encoded = result.expect("tiktoken_encode returned None");
         // Should contain commas (multiple tokens)
-        assert!(encoded.contains(','));
+        assert!(
+            encoded.contains(','),
+            "Encoded result should contain commas for multiple tokens"
+        );
     }
 
     #[test]
@@ -127,17 +147,24 @@ mod tests {
         let count_result = tiktoken_count(text);
         let encode_result = tiktoken_encode(text);
 
-        assert!(count_result.is_some());
-        assert!(encode_result.is_some());
+        assert!(count_result.is_some(), "tiktoken_count should return Some");
+        assert!(
+            encode_result.is_some(),
+            "tiktoken_encode should return Some"
+        );
 
-        let count: usize = count_result.unwrap().parse().unwrap();
-        let encoded = encode_result.unwrap();
+        let count_str = count_result.expect("tiktoken_count returned None");
+        let count: usize = count_str.parse().expect("Failed to parse count as usize");
+        let encoded = encode_result.expect("tiktoken_encode returned None");
         let token_count = if encoded.is_empty() {
             0
         } else {
             encoded.split(',').count()
         };
 
-        assert_eq!(count, token_count);
+        assert_eq!(
+            count, token_count,
+            "Count and encoded token count should match"
+        );
     }
 }

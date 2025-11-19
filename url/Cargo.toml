@@ -1,7 +1,7 @@
 [package]
 name = "url"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [[bin]]
 name = 'extract-url'
@@ -12,5 +12,5 @@ name = 'has-url'
 path = 'src/bin/has-url.rs'
 
 [dependencies]
-anyhow = "1.0.82"
-shared = { path = "../shared" }
+anyhow.workspace = true
+shared.workspace = true

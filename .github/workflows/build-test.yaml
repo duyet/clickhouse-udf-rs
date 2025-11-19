@@ -21,11 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
 
       - run: cargo build ${{ matrix.build_type == 'release' && '--release' || '' }}
 
@@ -50,11 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
 
       - run: cargo test
 
@@ -68,17 +60,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
 
       - run: cargo bench
 
       - uses: actions/upload-artifact@v6
         with:
-          name: bench-${{ matrix.build_type }}-${{ matrix.os }}
+          name: bench-${{ matrix.os }}
           path: target/criterion
 
   merge-and-comment-bench-report:
