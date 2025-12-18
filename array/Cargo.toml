@@ -13,6 +13,6 @@ path = "src/bin/topk.rs"
 [dependencies]
 anyhow = "1.0.82"
 shared = { path = "../shared" }
-topk = "0.5.0"
+topk = "0.7.0"
 
 [dev-dependencies]
