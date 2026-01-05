@@ -1,0 +1,26 @@
+<functions>
+        <!-- Tiktoken Functions -->
+        <function>
+            <name>tiktokenCount</name>
+            <type>executable_pool</type>
+            <command>tiktoken-count</command>
+            <format>TabSeparated</format>
+            <argument>
+                <type>String</type>
+                <name>value</name>
+            </argument>
+            <return_type>String</return_type>
+        </function>
+
+        <function>
+            <name>tiktokenEncode</name>
+            <type>executable_pool</type>
+            <command>tiktoken-encode</command>
+            <format>TabSeparated</format>
+            <argument>
+                <type>String</type>
+                <name>value</name>
+            </argument>
+            <return_type>String</return_type>
+        </function>
+    </functions>

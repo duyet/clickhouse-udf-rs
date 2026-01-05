@@ -1,0 +1,14 @@
+<functions>
+        <!-- Array Functions -->
+        <function>
+            <name>arrayTopK</name>
+            <type>executable_pool</type>
+            <command>array-topk</command>
+            <format>TabSeparated</format>
+            <argument>
+                <type>String</type>
+                <name>value</name>
+            </argument>
+            <return_type>String</return_type>
+        </function>
+    </functions>

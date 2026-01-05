@@ -1,0 +1,8 @@
+Test 1: extractUrl simple http	http://example.org
+Test 2: extractUrl simple https	https://example.org
+Test 3: extractUrl with text before	https://duyet.net
+Test 4: extractUrl with path	https://example.org/abc/def
+Test 5: extractUrl no URL
+Test 6: hasUrl with URL	1
+Test 7: hasUrl without URL	0
+Test 8: hasUrl ftp protocol	1

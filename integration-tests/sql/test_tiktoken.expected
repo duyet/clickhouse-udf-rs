@@ -1,0 +1,5 @@
+Test 1: tiktokenCount simple text	4
+Test 2: tiktokenCount empty string	0
+Test 3: tiktokenCount single word	1
+Test 4: tiktokenEncode simple text	9906
+Test 5: tiktokenEncode empty string

@@ -1,0 +1,5 @@
+Test 1: extractPhone with plus sign	1234567890
+Test 2: extractPhone with dashes	1234567890
+Test 3: extractPhone plain number	1234567890
+Test 4: extractPhone no number
+Test 5: extractPhone short number

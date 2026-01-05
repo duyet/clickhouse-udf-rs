@@ -1,0 +1,505 @@
+name: clickhouse-integration
+
+on:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  integration-test:
+    name: ClickHouse ${{ matrix.clickhouse_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        clickhouse_version:
+          - "25.6"
+          - "25.7"
+          - "25.8"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build all UDF binaries
+        run: cargo build --release
+
+      - name: List built binaries
+        run: |
+          echo "Built binaries:"
+          ls -lh target/release/ | grep -E '^-.*x' | grep -v '\.d$'
+
+      - name: Prepare ClickHouse directories
+        run: |
+          # Create directories for mounting
+          mkdir -p ${{ github.workspace }}/clickhouse-data/user_scripts
+          mkdir -p ${{ github.workspace }}/clickhouse-data/config
+
+          # Copy UDF binaries dynamically
+          echo "Copying UDF binaries..."
+
+          # Find all executable binaries in target/release/ (excluding build artifacts)
+          # Build artifacts have extensions (.d, .rlib, etc.) or are in subdirectories
+          binary_count=0
+          for binary in target/release/*; do
+            # Skip if not a file
+            if [ ! -f "$binary" ]; then
+              continue
+            fi
+
+            # Skip files with extensions (build artifacts)
+            if [[ "$binary" == *.* ]]; then
+              continue
+            fi
+
+            # Skip if not executable
+            if [ ! -x "$binary" ]; then
+              continue
+            fi
+
+            # Copy the binary
+            echo "  - Copying $(basename "$binary")"
+            cp "$binary" ${{ github.workspace }}/clickhouse-data/user_scripts/
+            binary_count=$((binary_count + 1))
+          done
+
+          echo "Copied $binary_count UDF binaries"
+
+          # Make binaries executable
+          chmod +x ${{ github.workspace }}/clickhouse-data/user_scripts/* 2>/dev/null || true
+
+          # Copy XML configurations
+          echo "Copying XML configurations..."
+          cp integration-tests/config/*.xml ${{ github.workspace }}/clickhouse-data/config/
+
+          echo ""
+          echo "Directory contents:"
+          echo "UDF Binaries:"
+          ls -la ${{ github.workspace }}/clickhouse-data/user_scripts/
+          echo ""
+          echo "XML Configs:"
+          ls -la ${{ github.workspace }}/clickhouse-data/config/
+
+      - name: Start ClickHouse container
+        run: |
+          echo "Starting ClickHouse ${{ matrix.clickhouse_version }}..."
+          docker run -d \
+            --name clickhouse-test \
+            -p 8123:8123 \
+            -p 9000:9000 \
+            -v ${{ github.workspace }}/clickhouse-data/user_scripts:/var/lib/clickhouse/user_scripts \
+            ghcr.io/duyet/docker-images:clickhouse_${{ matrix.clickhouse_version }}
+
+          echo "Container started, waiting for initialization..."
+          sleep 3
+
+      - name: Deploy UDF function definitions
+        run: |
+          echo "Deploying UDF function definitions to /etc/clickhouse-server/"
+          echo ""
+
+          for xml_file in ${{ github.workspace }}/clickhouse-data/config/*_function.xml; do
+            if [ -f "$xml_file" ]; then
+              filename=$(basename "$xml_file")
+
+              # Copy file
+              docker cp "$xml_file" "clickhouse-test:/etc/clickhouse-server/$filename"
+
+              # Immediately verify it exists
+              if docker exec clickhouse-test test -f "/etc/clickhouse-server/$filename"; then
+                # Show file details
+                docker exec clickhouse-test ls -lh "/etc/clickhouse-server/$filename"
+
+                # Set ownership
+                docker exec clickhouse-test chown clickhouse:clickhouse "/etc/clickhouse-server/$filename"
+              else
+                echo "✗ $filename - FAILED to copy!"
+                exit 1
+              fi
+            fi
+          done
+
+          echo ""
+          echo "✓ All function definitions deployed successfully"
+
+      - name: Restart ClickHouse to load function definitions
+        run: |
+          echo "Restarting ClickHouse to load function definitions..."
+          docker restart clickhouse-test
+
+          echo "Waiting for ClickHouse to restart..."
+          sleep 5
+
+      - name: Wait for ClickHouse to be ready
+        run: |
+          echo "Waiting for ClickHouse to be ready..."
+          for i in {1..30}; do
+            if docker exec clickhouse-test clickhouse-client --query "SELECT 1" > /dev/null 2>&1; then
+              echo "✓ ClickHouse is ready!"
+              echo ""
+              echo "Version:"
+              docker exec clickhouse-test clickhouse-client --query "SELECT version()"
+              echo ""
+
+              echo "Verifying UDF binaries..."
+              docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | head -15
+              echo ""
+
+              echo "Quick check - any executable functions loaded?"
+              docker exec clickhouse-test clickhouse-client --query "SELECT COUNT(*) as count, origin FROM system.functions GROUP BY origin"
+              echo ""
+
+              exit 0
+            fi
+            echo "Attempt $i/30..."
+            sleep 3
+          done
+
+          echo "ERROR: ClickHouse did not become ready in time"
+          echo "Container logs:"
+          docker logs clickhouse-test 2>&1 | tail -100
+          exit 1
+
+      - name: Verify UDF registration
+        run: |
+          echo "=== UDF Registration Diagnostics ==="
+          echo ""
+
+          echo "1. Function definition files in /etc/clickhouse-server/:"
+          docker exec clickhouse-test find /etc/clickhouse-server -name "*_function.xml" -type f
+
+          echo ""
+          echo "2. ClickHouse config for UDF loading:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name, value FROM system.settings WHERE name LIKE '%user_defined%' FORMAT Vertical" || echo "No UDF settings found"
+
+          echo ""
+          echo "3. Check main config.xml for user_defined_executable_functions_config:"
+          docker exec clickhouse-test grep -A2 -B2 "user_defined_executable_functions_config" /etc/clickhouse-server/config.xml || echo "Not found in main config"
+
+          echo ""
+          echo "4. Sample function definition (array_function.xml):"
+          docker exec clickhouse-test cat /etc/clickhouse-server/array_function.xml || echo "File not found"
+
+          echo ""
+          echo "5. All registered executable functions:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name FROM system.functions WHERE origin = 'Executable' ORDER BY name" || echo "Query failed"
+
+          echo ""
+          echo "6. Check ClickHouse logs for UDF errors:"
+          docker logs clickhouse-test 2>&1 | grep -i "user_defined\|executable.*function\|error.*function" | tail -30 || echo "No relevant log entries"
+
+          echo ""
+          echo "7. Expected UDFs status:"
+          docker exec clickhouse-test clickhouse-client --query "SELECT name, origin FROM system.functions WHERE name IN ('readWktLineString', 'vinCleaner', 'vinManuf', 'vinYear', 'extractUrl', 'hasUrl', 'arrayTopK', 'extractPhone', 'tiktokenCount', 'tiktokenEncode') ORDER BY name FORMAT Vertical"
+
+          echo ""
+          echo "8. Manual UDF binary execution test:"
+          echo "Testing array-topk binary directly with correct format..."
+          # Test if binary exists and is executable
+          if docker exec clickhouse-test test -x /var/lib/clickhouse/user_scripts/array-topk; then
+            echo "  ✓ Binary is executable"
+
+            # Test with ClickHouse array format (comma-separated in brackets)
+            echo "  Test 1: Sending '[1,1,2,2,3]' with k=3"
+            if result=$(docker exec clickhouse-test bash -c 'echo "[1,1,2,2,3]" | /var/lib/clickhouse/user_scripts/array-topk 3' 2>&1); then
+              echo "  ✓ Binary executed successfully"
+              echo "  Output: '$result'"
+            else
+              echo "  ✗ Binary execution failed"
+              echo "  Error: $result"
+            fi
+
+            # Test with different input
+            echo "  Test 2: Sending '[1,1,2,2,2]' with k=2"
+            if result2=$(docker exec clickhouse-test bash -c 'echo "[1,1,2,2,2]" | /var/lib/clickhouse/user_scripts/array-topk 2' 2>&1); then
+              echo "  ✓ Binary executed successfully"
+              echo "  Output: '$result2'"
+            else
+              echo "  ✗ Binary execution failed"
+              echo "  Error: $result2"
+            fi
+          else
+            echo "  ✗ Binary not found or not executable"
+          fi
+
+          echo ""
+          echo "9. Check binary permissions and ownership:"
+          docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ | grep -E "(array-topk|vin-cleaner|extract-url)" || echo "Sample binaries not found"
+
+          echo ""
+          echo "10. Test actual UDF query execution (TabSeparated format - same as tests):"
+
+          echo ""
+          echo "Query: SELECT 'Test 1' AS test_name, arrayTopK(3)([1,1,2,2,3]) AS result"
+          set +e  # Temporarily disable exit on error
+          output=$(docker exec clickhouse-test clickhouse-client --query "SELECT 'Test 1' AS test_name, arrayTopK(3)([1,1,2,2,3]) AS result" 2>&1)
+          exit_code=$?
+          set -e  # Re-enable exit on error
+          echo "Exit code: $exit_code"
+          echo "Output (between ---markers---):"
+          echo "---START---"
+          echo "$output"
+          echo "---END---"
+          echo "Output length: ${#output} chars"
+
+          echo ""
+          echo "Query: SELECT vinCleaner('1g1nd52f14m712344') AS result"
+          set +e
+          output2=$(docker exec clickhouse-test clickhouse-client --query "SELECT vinCleaner('1g1nd52f14m712344') AS result" 2>&1)
+          exit_code2=$?
+          set -e
+          echo "Exit code: $exit_code2"
+          echo "Output: '$output2'"
+          echo "Output length: ${#output2} chars"
+
+          echo ""
+          echo "Testing exact query from test_array.sql:"
+          set +e
+          docker exec clickhouse-test clickhouse-client --query "SELECT 'Test 1: arrayTopK(3)' AS test_name, arrayTopK(3)([1, 1, 2, 2, 3, 4, 5]) AS result" 2>&1 | cat -A
+          set -e
+
+          echo ""
+          echo "11. Check ClickHouse server logs for execution errors:"
+          docker logs clickhouse-test 2>&1 | tail -50
+
+      - name: Run integration tests
+        run: |
+          cd integration-tests
+          ./run-tests.sh
+
+      - name: Add test summary to job
+        if: always()
+        run: |
+          if [ -f integration-tests/test-summary.md ]; then
+            echo "## ClickHouse ${{ matrix.clickhouse_version }}" >> $GITHUB_STEP_SUMMARY
+            cat integration-tests/test-summary.md >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload test summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-summary-${{ matrix.clickhouse_version }}
+          path: integration-tests/test-summary.md
+          retention-days: 30
+
+      - name: Show ClickHouse logs on failure
+        if: failure()
+        run: |
+          echo "=== ClickHouse server logs ==="
+          docker logs clickhouse-test 2>&1 | tail -100
+
+      - name: Debug - List ClickHouse directories
+        if: failure()
+        run: |
+          echo "=== Contents of /var/lib/clickhouse/user_scripts/ ==="
+          docker exec clickhouse-test ls -la /var/lib/clickhouse/user_scripts/ || true
+
+          echo ""
+          echo "=== Contents of /etc/clickhouse-server/conf.d/ ==="
+          docker exec clickhouse-test ls -la /etc/clickhouse-server/conf.d/ || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Stopping and removing container..."
+          docker stop clickhouse-test || true
+          docker rm clickhouse-test || true
+
+  post-pr-comment:
+    name: Post PR Comment
+    runs-on: ubuntu-latest
+    needs: integration-test
+    if: always() && github.event_name == 'pull_request'
+    steps:
+      - name: Download all test summaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-summary-*
+          path: summaries
+
+      - name: Create consolidated report
+        env:
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Debug: List downloaded artifacts
+          echo "=== Downloaded Artifacts ==="
+          ls -la summaries/ || echo "No summaries directory found"
+          find summaries/ -name "*.md" -exec echo "Found: {}" \; 2>/dev/null || echo "No markdown files found"
+          echo ""
+
+          # Header with metadata (compact) - with separator for appending
+          cat > pr-comment.md <<EOF
+
+          ---
+
+          ## 🧪 ClickHouse Integration Tests
+
+          [Workflow #${{ github.run_number }}]($WORKFLOW_URL) • [\`${COMMIT_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/$COMMIT_SHA) • @${{ github.actor }}
+
+          EOF
+
+          # Count total pass/fail across all versions
+          total_passed=0
+          total_failed=0
+          total_tests=0
+          tested_versions=0
+
+          # Add results for each version
+          for dir in summaries/test-summary-*; do
+            if [ -d "$dir" ] && [ -f "$dir/test-summary.md" ]; then
+              tested_versions=$((tested_versions + 1))
+
+              # Extract version from directory name
+              version=$(basename "$dir" | sed 's/test-summary-//')
+
+              echo "Processing version: $version"
+              echo "File: $dir/test-summary.md"
+
+              # Extract metrics first (using more robust patterns)
+              # Look for the metrics in the table format
+              passed=0
+              failed=0
+              tests=0
+              version_status=""
+
+              if grep -q "Passed" "$dir/test-summary.md"; then
+                echo "Extracting metrics from $dir/test-summary.md"
+                cat "$dir/test-summary.md"
+
+                # Extract numbers from the lines - handle both backticks and plain numbers
+                passed=$(grep "Passed" "$dir/test-summary.md" | grep -oE '[0-9]+' | head -1)
+                failed=$(grep "Failed" "$dir/test-summary.md" | grep -oE '[0-9]+' | head -1)
+                tests=$(grep "Total Tests" "$dir/test-summary.md" | grep -oE '[0-9]+' | head -1)
+
+                # Set defaults if extraction failed
+                passed=${passed:-0}
+                failed=${failed:-0}
+                tests=${tests:-0}
+
+                echo "Extracted: tests=$tests, passed=$passed, failed=$failed"
+
+                # Determine status display
+                if [ "$failed" -eq 0 ] && [ "$tests" -gt 0 ]; then
+                  version_status="✅ $passed/$tests pass"
+                elif [ "$tests" -gt 0 ]; then
+                  version_status="❌ $passed/$tests pass, $failed fail"
+                else
+                  version_status="⚠️ no tests found"
+                fi
+
+                total_passed=$((total_passed + passed))
+                total_failed=$((total_failed + failed))
+                total_tests=$((total_tests + tests))
+              else
+                version_status="⚠️ no results"
+              fi
+
+              # Add compact version in collapsible section with test counts
+              echo "<details>" >> pr-comment.md
+              echo "<summary><strong>ClickHouse $version</strong> ($version_status) - <a href=\"$WORKFLOW_URL\">View Logs</a></summary>" >> pr-comment.md
+              echo "" >> pr-comment.md
+
+              # Add the detailed summary
+              tail -n +2 "$dir/test-summary.md" >> pr-comment.md
+              echo "" >> pr-comment.md
+              echo "</details>" >> pr-comment.md
+              echo "" >> pr-comment.md
+            fi
+          done
+
+          echo "=== Final Totals ==="
+          echo "Versions: $tested_versions"
+          echo "Total Tests: $total_tests"
+          echo "Passed: $total_passed"
+          echo "Failed: $total_failed"
+
+          # Overall summary (compact)
+          if [ $tested_versions -gt 0 ] && [ $total_tests -gt 0 ]; then
+            success_rate=$(awk "BEGIN {printf \"%.1f\", ($total_passed/$total_tests)*100}")
+
+            # Determine status emoji
+            if [ $total_failed -eq 0 ]; then
+              status="✅ All tests passed"
+            else
+              status="❌ $total_failed test(s) failed"
+            fi
+
+            cat >> pr-comment.md <<EOF
+          ### Summary: $status
+
+          **$tested_versions** ClickHouse versions tested • **$total_tests** tests • **$success_rate%** success rate
+
+          EOF
+          elif [ $tested_versions -gt 0 ] && [ $total_tests -eq 0 ]; then
+            cat >> pr-comment.md <<EOF
+          ### ⚠️ No test results extracted
+
+          Test summaries were found but metrics could not be parsed. [Check logs]($WORKFLOW_URL).
+
+          EOF
+          else
+            cat >> pr-comment.md <<EOF
+          ### ⚠️ No test summaries found
+
+          Integration tests may not have run successfully. [Check logs]($WORKFLOW_URL).
+
+          EOF
+          fi
+
+          # Compact footer
+          cat >> pr-comment.md <<EOF
+
+          <sub>🤖 Tested: CH 25.6, 25.7, 25.8 • UDFs: wkt, vin, url, array, string, tiktoken • [View Workflow](https://github.com/${{ github.repository }}/blob/main/.github/workflows/clickhouse-integration.yaml)</sub>
+          EOF
+
+          echo "=== Generated PR Comment ==="
+          cat pr-comment.md
+
+      - name: Find existing Benches report comment
+        id: find-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: "Benches report:"
+          direction: last
+
+      - name: Append to existing comment or create new
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          token: ${{ secrets.DUYETBOT_GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          body-path: pr-comment.md
+          edit-mode: append
