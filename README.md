@@ -27,6 +27,7 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 tiktoken-encode
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-phone
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 string-format
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 llm
 
 ```
 
@@ -88,6 +89,7 @@ SELECT vinCleaner('1G1JC1249Y7150000');
 4. [array](#4-array)
 5. [tiktoken](#5-tiktoken)
 6. [string](#6-string)
+7. [llm](#7-llm)
 
 
 # Usage
@@ -560,6 +562,81 @@ String processing utilities.
   ```
 </details>
 
+## 7. `llm`
+
+Generic LLM function for any prompt-based task using OpenAI API.
+
+<details>
+  <summary>
+    Put the <strong>llm</strong> binary into <code>user_scripts</code> folder.
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/latest/download/clickhouse_udf_llm_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_llm_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+
+  llm
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_llm_function.xml</code>
+  </summary>
+
+  ```xml
+  <functions>
+    <!-- llm -->
+    <function>
+        <name>llm</name>
+        <type>executable_pool</type>
+        <command>llm</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>prompt</name>
+        </argument>
+        <return_type>String</return_type>
+        <environment>
+            <OPENAI_API_KEY>/path/to/openai-api-key.txt</OPENAI_API_KEY>
+            <OPENAI_MODEL>gpt-4o-mini</OPENAI_MODEL>
+            <OPENAI_MAX_TOKENS>1000</OPENAI_MAX_TOKENS>
+            <OPENAI_TEMPERATURE>0.7</OPENAI_TEMPERATURE>
+        </environment>
+    </function>
+  </functions>
+  ```
+</details>
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  -- Simple summarization
+  SELECT llm('Summarize this: {0}' || '\t' || article_content)
+  FROM articles;
+
+  -- Translation
+  SELECT llm('Translate to Spanish: {0}' || '\t' || text)
+  FROM messages;
+
+  -- Sentiment analysis
+  SELECT llm('Classify sentiment as positive/negative/neutral: {0}' || '\t' || review)
+  FROM reviews;
+
+  -- Multiple values
+  SELECT llm('Compare {0} and {1}: {2}' || '\t' || product_a || '\t' || product_b || '\t' || criteria)
+  FROM products;
+
+  -- Text extraction
+  SELECT llm('Extract email addresses from: {0}' || '\t' || text)
+  FROM logs;
+  ```
+</details>
+
+**Note**: The prompt template uses `{0}`, `{1}`, `{2}`... as placeholders. Values are passed tab-separated.
+
 ## Performance
 
 UDF binaries are compiled with optimizations and are approximately 434KB each. Performance characteristics:
@@ -588,6 +665,7 @@ This project is organized as a Cargo workspace with the following structure:
 - **array**: Array manipulation (top-k using FilteredSpaceSaving)
 - **tiktoken**: GPT tokenization
 - **string**: String processing utilities
+- **llm**: Generic LLM function using OpenAI API
 
 Each package compiles to standalone executables that can be used as ClickHouse UDFs.
 

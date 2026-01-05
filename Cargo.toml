@@ -1,5 +1,5 @@
 [workspace]
-members = ["wkt", "vin", "shared", "url", "string", "array", "tiktoken"]
+members = ["wkt", "vin", "shared", "url", "string", "array", "tiktoken", "llm"]
 resolver = "2"
 
 [workspace.package]

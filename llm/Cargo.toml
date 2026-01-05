@@ -1,0 +1,22 @@
+[package]
+name = "llm"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "llm"
+path = "src/bin/llm.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+shared = { workspace = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["rustls-tls", "blocking", "json"]
+
+[dev-dependencies]
+mockito = "1.4"
