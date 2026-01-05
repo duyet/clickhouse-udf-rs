@@ -7,7 +7,7 @@ mod tests {
     #[test]
     fn test_process_stdin_success() {
         // Test successful processing of valid input
-        let _f: ProcessFn = Box::new(|input| {
+        let f: ProcessFn = Box::new(|input| {
             if input.is_empty() {
                 None
             } else {
@@ -15,11 +15,9 @@ mod tests {
             }
         });
 
-        let _input = "hello\nworld\n";
-
-        // We can't directly test process_stdin without mocking stdin
-        // This demonstrates the expected behavior pattern
-        assert!(true);
+        // Test that the processing function works correctly
+        assert_eq!(f("hello"), Some("HELLO".to_string()));
+        assert_eq!(f(""), None);
     }
 
     #[test]
@@ -56,9 +54,7 @@ mod tests {
     #[test]
     fn test_processing_function_with_various_inputs() {
         let f: ProcessFn = Box::new(|input| {
-            if input.is_empty() {
-                None
-            } else if input.starts_with("error") {
+            if input.is_empty() || input.starts_with("error") {
                 None
             } else {
                 Some(format!("processed: {}", input))

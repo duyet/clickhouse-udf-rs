@@ -113,7 +113,7 @@ fn topk_fn(k: usize) -> ProcessFn {
         topk_result.sort_by(|a, b| {
             b.1.estimated_count()
                 .cmp(&a.1.estimated_count())
-                .then_with(|| a.0.cmp(&b.0))
+                .then_with(|| a.0.cmp(b.0))
         });
 
         let topk_result_array = topk_result

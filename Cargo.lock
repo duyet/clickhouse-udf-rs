@@ -1015,7 +1015,6 @@ name = "string"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "once_cell",
  "regex",
  "shared",
 ]
@@ -1202,7 +1201,6 @@ dependencies = [
  "chrono",
  "criterion",
  "csv",
- "once_cell",
  "regex",
  "shared",
 ]

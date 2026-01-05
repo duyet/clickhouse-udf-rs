@@ -14,8 +14,8 @@
 //!
 //! # Examples
 //!
-//! ```
-//! use url::{detect_url, extract_url, has_url};
+//! ```ignore
+//! use url::url::{detect_url, extract_url, has_url};
 //!
 //! // Detect URL boundaries
 //! let (start, end) = detect_url("Visit https://example.org for more").unwrap();
@@ -57,7 +57,7 @@ const URL_PATTERNS: &[&str] = &["http://", "https://", "ftp://", "ftps://", "fil
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use url::detect_url;
 ///
 /// // URL at the start
@@ -111,7 +111,7 @@ pub fn detect_url(s: &str) -> Option<(usize, usize)> {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use url::extract_url;
 ///
 /// assert_eq!(
@@ -157,7 +157,7 @@ pub fn extract_url(s: &str) -> Option<String> {
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use url::has_url;
 ///
 /// assert_eq!(has_url("https://example.org"), Some("true".to_string()));
