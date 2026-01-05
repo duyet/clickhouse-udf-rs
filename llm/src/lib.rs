@@ -277,6 +277,11 @@ mod tests {
 
     #[test]
     fn test_get_api_key_priority() {
+        // Save original values
+        let orig_key = env::var("OPENAI_API_KEY").ok();
+        let orig_file = env::var("OPENAI_API_KEY_FILE").ok();
+        let orig_cmd = env::var("OPENAI_API_KEY_CMD").ok();
+
         // Test that environment variable has priority over unset file
         env::set_var("OPENAI_API_KEY", "test-key-from-env");
         env::remove_var("OPENAI_API_KEY_FILE");
@@ -286,18 +291,45 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "test-key-from-env");
 
-        // Cleanup
-        env::remove_var("OPENAI_API_KEY");
+        // Restore original values
+        if let Some(key) = orig_key {
+            env::set_var("OPENAI_API_KEY", key);
+        } else {
+            env::remove_var("OPENAI_API_KEY");
+        }
+        if let Some(file) = orig_file {
+            env::set_var("OPENAI_API_KEY_FILE", file);
+        }
+        if let Some(cmd) = orig_cmd {
+            env::set_var("OPENAI_API_KEY_CMD", cmd);
+        }
     }
 
     #[test]
     fn test_get_api_key_fails_when_none_set() {
+        // Save original values
+        let orig_key = env::var("OPENAI_API_KEY").ok();
+        let orig_file = env::var("OPENAI_API_KEY_FILE").ok();
+        let orig_cmd = env::var("OPENAI_API_KEY_CMD").ok();
+
+        // Clear all env vars
         env::remove_var("OPENAI_API_KEY");
         env::remove_var("OPENAI_API_KEY_FILE");
         env::remove_var("OPENAI_API_KEY_CMD");
 
         let result = get_api_key();
-        assert!(result.is_err());
+        assert!(result.is_err(), "get_api_key should return Err when no API key is configured");
         assert!(result.unwrap_err().to_string().contains("No API key found"));
+
+        // Restore original values
+        if let Some(key) = orig_key {
+            env::set_var("OPENAI_API_KEY", key);
+        }
+        if let Some(file) = orig_file {
+            env::set_var("OPENAI_API_KEY_FILE", file);
+        }
+        if let Some(cmd) = orig_cmd {
+            env::set_var("OPENAI_API_KEY_CMD", cmd);
+        }
     }
 }
