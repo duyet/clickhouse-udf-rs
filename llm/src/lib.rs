@@ -130,8 +130,7 @@ fn call_openai(prompt: &str) -> Result<String> {
     // Try multiple methods to get API key (in order of preference)
     let api_key = get_api_key()?;
 
-    let model = env::var("OPENAI_MODEL")
-        .unwrap_or_else(|_| "gpt-4o-mini".to_string());
+    let model = env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string());
 
     let max_tokens: u32 = env::var("OPENAI_MAX_TOKENS")
         .unwrap_or_else(|_| "1000".to_string())
@@ -143,8 +142,8 @@ fn call_openai(prompt: &str) -> Result<String> {
         .parse()
         .unwrap_or(0.7);
 
-    let api_base = env::var("OPENAI_API_BASE")
-        .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let api_base =
+        env::var("OPENAI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -174,13 +173,13 @@ fn call_openai(prompt: &str) -> Result<String> {
 
     if !response.status().is_success() {
         let status = response.status();
-        let error_text = response.text().unwrap_or_else(|_| "Unknown error".to_string());
+        let error_text = response
+            .text()
+            .unwrap_or_else(|_| "Unknown error".to_string());
         anyhow::bail!("LLM API error: {} - {}", status, error_text);
     }
 
-    let chat_response: ChatResponse = response
-        .json()
-        .context("Failed to parse LLM response")?;
+    let chat_response: ChatResponse = response.json().context("Failed to parse LLM response")?;
 
     chat_response
         .choices
@@ -253,7 +252,7 @@ mod tests {
     #[test]
     fn test_template_replacement_multiple() {
         let template = "Compare {0} and {1}";
-        let values = vec!["Apple", "Orange"];
+        let values = ["Apple", "Orange"];
         let mut prompt = template.to_string();
         for (i, value) in values.iter().enumerate() {
             prompt = prompt.replace(&format!("{{{}}}", i), value);
@@ -274,7 +273,6 @@ mod tests {
     fn test_call_openai_mock() {
         // This test would require mocking the OpenAI API
         // For now, we just verify the function compiles
-        assert!(true);
     }
 
     #[test]

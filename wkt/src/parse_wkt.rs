@@ -23,9 +23,7 @@ pub fn to_string<T: CoordNum + std::fmt::Display>(linestring: LineString<T>) -> 
 }
 
 pub fn parse_wkt(s: &str) -> Option<String> {
-    LineString::<f64>::try_from_wkt_str(s)
-        .ok()
-        .map(to_string)
+    LineString::<f64>::try_from_wkt_str(s).ok().map(to_string)
 }
 
 #[cfg(test)]
