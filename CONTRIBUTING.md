@@ -20,7 +20,7 @@ This project adheres to a code of conduct based on respect and professionalism. 
 
 ### Prerequisites
 
-- Rust 1.70+ (stable toolchain)
+- Rust 1.73+ (stable toolchain)
 - cargo
 - git
 
