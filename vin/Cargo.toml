@@ -1,7 +1,7 @@
 [package]
 name = "vin"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [[bin]]
 name = "vin-cleaner"
@@ -32,12 +32,11 @@ name = "vin"
 harness = false
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow.workspace = true
 chrono = "0.4.38"
 csv = "1.3.0"
-once_cell = "1.19.0"
-regex = "1.10.4"
-shared = { path = "../shared" }
+regex.workspace = true
+shared.workspace = true
 
 [dev-dependencies]
 criterion = { version = "0.8.0", features = ["html_reports"] }

@@ -1,7 +1,7 @@
 [package]
 name = "array"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 authors = ["Duyet Le <me@duyet.net>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,8 +11,8 @@ name = "array-topk"
 path = "src/bin/topk.rs"
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow.workspace = true
 shared = { path = "../shared" }
-topk = "0.7.0"
+topk.workspace = true
 
 [dev-dependencies]

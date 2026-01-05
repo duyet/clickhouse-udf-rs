@@ -1,9 +1,9 @@
-use once_cell::sync::Lazy;
 use regex::Regex;
 use shared::io::process_stdin;
+use std::sync::LazyLock;
 
-static PHONE_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\+?\d[\d -]{8,}\d").expect("Invalid phone regex pattern"));
+static PHONE_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\+?\d[\d -]{8,}\d").expect("Invalid phone regex pattern"));
 
 fn extract_phone(input: &str) -> Option<String> {
     if let Some(cap) = PHONE_REGEX.captures_iter(input).next() {

@@ -1,6 +1,5 @@
 use anyhow::Result;
 use shared::io::process_stdin;
-use std::boxed::Box;
 use tiktoken::tiktoken::tiktoken_encode;
 
 fn main() -> Result<()> {

@@ -1,9 +1,83 @@
+//! URL detection and extraction utilities.
+//!
+//! This module provides functions for detecting, extracting, and validating URLs
+//! within text strings. It supports common protocols including HTTP, HTTPS, FTP,
+//! FTPS, and FILE.
+//!
+//! # Supported Protocols
+//!
+//! - `http://`
+//! - `https://`
+//! - `ftp://`
+//! - `ftps://`
+//! - `file://`
+//!
+//! # Examples
+//!
+//! ```
+//! use url::{detect_url, extract_url, has_url};
+//!
+//! // Detect URL boundaries
+//! let (start, end) = detect_url("Visit https://example.org for more").unwrap();
+//! assert_eq!((start, end), (6, 25));
+//!
+//! // Extract the URL
+//! let url = extract_url("Visit https://example.org for more").unwrap();
+//! assert_eq!(url, "https://example.org");
+//!
+//! // Check if text contains a URL
+//! assert_eq!(has_url("https://example.org").unwrap(), "true");
+//! assert_eq!(has_url("no url here").unwrap(), "false");
+//! ```
+
 /// Static array of URL protocol patterns
 const URL_PATTERNS: &[&str] = &["http://", "https://", "ftp://", "ftps://", "file://"];
 
-/// Returns the index to the start and the end of the URL
-/// if the the given string includes a
-/// URL or alike. Otherwise, returns `None`.
+/// Detects the position of a URL within a string.
+///
+/// Searches for the first occurrence of a recognized URL protocol and determines
+/// the boundaries of the complete URL by finding the next whitespace character.
+///
+/// # Arguments
+///
+/// * `s` - The input string to search for URLs
+///
+/// # Returns
+///
+/// * `Some((start, end))` - Tuple of byte indices marking the URL boundaries
+///   - `start`: Index where the URL begins (start of protocol)
+///   - `end`: Index where the URL ends (at whitespace or end of string)
+/// * `None` - If no URL is found
+///
+/// # URL Detection Logic
+///
+/// 1. Searches for the first matching protocol from `URL_PATTERNS`
+/// 2. Finds the end of the URL by locating the next whitespace character
+/// 3. If no whitespace is found, extends to the end of the string
+///
+/// # Examples
+///
+/// ```
+/// use url::detect_url;
+///
+/// // URL at the start
+/// assert_eq!(detect_url("https://example.org"), Some((0, 19)));
+///
+/// // URL in the middle
+/// assert_eq!(
+///     detect_url("Visit https://example.org today"),
+///     Some((6, 25))
+/// );
+///
+/// // URL with path
+/// assert_eq!(
+///     detect_url("https://example.org/path/to/page something"),
+///     Some((0, 28))
+/// );
+///
+/// // No URL found
+/// assert_eq!(detect_url("no url here"), None);
+/// ```
 pub fn detect_url(s: &str) -> Option<(usize, usize)> {
     for &pattern in URL_PATTERNS {
         match s.find(pattern) {
@@ -21,10 +95,80 @@ pub fn detect_url(s: &str) -> Option<(usize, usize)> {
     None
 }
 
+/// Extracts the URL from a string, if one exists.
+///
+/// This is a convenience function that combines `detect_url()` with string slicing
+/// to return the actual URL text rather than its position.
+///
+/// # Arguments
+///
+/// * `s` - The input string to search for a URL
+///
+/// # Returns
+///
+/// * `Some(String)` - The extracted URL (including protocol)
+/// * `None` - If no URL is found in the input string
+///
+/// # Examples
+///
+/// ```
+/// use url::extract_url;
+///
+/// assert_eq!(
+///     extract_url("Visit https://example.org today"),
+///     Some("https://example.org".to_string())
+/// );
+///
+/// assert_eq!(
+///     extract_url("https://example.org/path/to/page something"),
+///     Some("https://example.org/path/to/page".to_string())
+/// );
+///
+/// assert_eq!(extract_url("no url here"), None);
+///
+/// // Works with different protocols
+/// assert_eq!(
+///     extract_url("Download from ftp://files.example.org now"),
+///     Some("ftp://files.example.org".to_string())
+/// );
+/// ```
 pub fn extract_url(s: &str) -> Option<String> {
     detect_url(s).map(|(start, end)| s[start..end].to_string())
 }
 
+/// Checks whether a string contains a URL.
+///
+/// Returns a string representation of a boolean value ("true" or "false")
+/// indicating whether the input contains a recognized URL.
+///
+/// This function is designed for ClickHouse UDF usage where string outputs
+/// are preferred over boolean types.
+///
+/// # Arguments
+///
+/// * `s` - The input string to check for URLs
+///
+/// # Returns
+///
+/// * `Some("true")` - If the string contains a URL
+/// * `Some("false")` - If the string does not contain a URL
+///
+/// Note: This function always returns `Some`, never `None`.
+///
+/// # Examples
+///
+/// ```
+/// use url::has_url;
+///
+/// assert_eq!(has_url("https://example.org"), Some("true".to_string()));
+/// assert_eq!(has_url("Visit https://example.org"), Some("true".to_string()));
+/// assert_eq!(has_url("no url here"), Some("false".to_string()));
+/// assert_eq!(has_url(""), Some("false".to_string()));
+///
+/// // Works with all supported protocols
+/// assert_eq!(has_url("ftp://example.org"), Some("true".to_string()));
+/// assert_eq!(has_url("file:///path/to/file"), Some("true".to_string()));
+/// ```
 pub fn has_url(s: &str) -> Option<String> {
     match detect_url(s).is_some() {
         true => Some("true".to_string()),

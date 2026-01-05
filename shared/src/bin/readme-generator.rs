@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::{collections::HashMap, env};
@@ -69,20 +69,19 @@ fn get_bins(member: String) -> Result<Vec<Bin>> {
         .map(|bin| {
             let config = get_bin_config(member.clone()).unwrap_or_default();
 
+            // Extract bin name once to avoid repeated cloning
+            let bin_name = bin.name.unwrap_or_default();
+            let bin_path = bin.path.unwrap_or_default();
+
             Bin {
-                name: bin.name.clone().unwrap_or_default(),
-                bin: bin.path.unwrap_or_default(),
+                name: bin_name.clone(),
+                bin: bin_path,
                 udf_name: config
-                    .get(&bin.name.clone().unwrap_or_default())
+                    .get(&bin_name)
                     .map(|c| c.udf_name.clone())
-                    .or_else(|| {
-                        Some(to_clickhouse_udf_name(
-                            &bin.name.clone().unwrap_or_default(),
-                        ))
-                    })
-                    .unwrap_or_default(),
+                    .unwrap_or_else(|| to_clickhouse_udf_name(&bin_name)),
                 usages: config
-                    .get(&bin.name.clone().unwrap_or_default())
+                    .get(&bin_name)
                     .map(|c| c.usages.clone())
                     .unwrap_or_default(),
             }
