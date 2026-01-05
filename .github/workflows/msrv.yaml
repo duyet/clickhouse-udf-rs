@@ -8,7 +8,7 @@ on:
 
 jobs:
   msrv:
-    name: Check MSRV (1.73.0)
+    name: Check MSRV (1.80.0)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -17,7 +17,7 @@ jobs:
       - name: Install Rust toolchain (MSRV)
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.73.0
+          toolchain: 1.80.0
 
       - name: Cache cargo registry
         uses: actions/cache@v5
