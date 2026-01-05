@@ -1,1 +1,53 @@
+# Rust build artifacts
 /target
+**/target
+
+# Cargo lock file (for libraries, but kept for applications)
+# Cargo.lock
+
+# Backup files
+*~
+*.swp
+*.swo
+*.bak
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE-specific files
+.vscode/
+.idea/
+*.iml
+*.sublime-*
+.vs/
+.project
+.classpath
+.settings/
+
+# Rust-specific
+**/*.rs.bk
+*.pdb
+
+# Profiling and benchmarking
+perf.data
+perf.data.old
+flamegraph.svg
+/criterion
+
+# Coverage
+*.profraw
+*.profdata
+/coverage
+/lcov.info
+/tarpaulin-report.html
+
+# Local development
+.env
+.env.local
+.direnv/

@@ -1,0 +1,29 @@
+# Clippy configuration
+# See https://doc.rust-lang.org/clippy/lint_configuration.html
+
+# Warn on all clippy lints by default
+# Individual lints can be allowed/denied in code with #[allow(clippy::lint_name)]
+
+# Cognitive complexity threshold
+cognitive-complexity-threshold = 30
+
+# Maximum allowed size for arrays on the stack
+array-size-threshold = 512000
+
+# Maximum allowed size for single characters
+single-char-binding-names-threshold = 4
+
+# Minimum number of struct fields before triggering too-many-arguments
+too-many-arguments-threshold = 7
+
+# Maximum type complexity
+type-complexity-threshold = 250
+
+# Verbose bit mask threshold
+verbose-bit-mask-threshold = 1
+
+# Disallowed names (variable names that should not be used)
+disallowed-names = ["foo", "bar", "baz", "quux"]
+
+# Allowed one-character names
+allowed-idents-below-min-chars = ["i", "j", "k", "x", "y", "z", "w", "n", "m", "s", "c", "f", "t", "e"]
