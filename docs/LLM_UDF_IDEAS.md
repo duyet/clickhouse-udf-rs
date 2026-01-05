@@ -266,3 +266,372 @@ pub fn text_embedding(input: &str) -> Option<String> {
 - [candle: ML framework in Rust](https://github.com/huggingface/candle)
 - [rust-bert: BERT in Rust](https://github.com/guillaume-be/rust-bert)
 - [ClickHouse External UDFs](https://clickhouse.com/docs/en/sql-reference/functions/external-user-defined-functions)
+
+---
+
+## Additional LLM-Based UDF Ideas
+
+### 13. **Text Deduplication UDFs**
+
+Detect near-duplicate texts using semantic similarity or hashing.
+
+```sql
+SELECT textDedupHash('This is a sample document')
+-- Returns: MinHash or SimHash for similarity comparison
+
+SELECT isNearDuplicate('text1', 'text2', 0.85)
+-- Returns: 1 if similarity > 0.85
+```
+
+**Use Cases:**
+- Deduplicating customer feedback
+- Removing duplicate social media posts
+- Identifying similar documents
+
+**Implementation:**
+- MinHash or SimHash for fast approximation
+- Cosine similarity with embeddings for accuracy
+
+### 14. **Text Complexity Scoring UDFs**
+
+Calculate readability scores and complexity metrics.
+
+```sql
+SELECT textComplexity('The quick brown fox...')
+-- Returns: JSON with scores (flesch, fog_level, etc.)
+
+SELECT fleschReadingEase(article_content)
+SELECT fleschKincaidGrade(article_content)
+```
+
+**Metrics:**
+- Flesch Reading Ease
+- Flesch-Kincaid Grade Level
+- Gunning Fog Index
+- Sentence length, word length statistics
+
+**Use Cases:**
+- Content quality assessment
+- Educational content classification
+- SEO optimization
+
+### 15. **Email Parsing and Extraction UDFs**
+
+Parse emails and extract structured information.
+
+```sql
+SELECT extractEmailParts(raw_email)
+-- Returns: JSON with from, to, subject, body, etc.
+
+SELECT extractEmailThread(raw_email)
+-- Returns: Thread/conversation ID
+```
+
+**Use Cases:**
+- Email analytics
+- Customer support analysis
+- Communication pattern analysis
+
+### 16. **JSON/Structured Data Extraction UDFs**
+
+Extract structured data from unstructured text using LLMs.
+
+```sql
+SELECT extractJSON('Name: John, Age: 30, City: NYC')
+-- Returns: {"name": "John", "age": 30, "city": "NYC"}
+
+SELECT extractTable('Product: Laptop, Price: $999')
+-- Returns: Structured table data
+```
+
+**Use Cases:**
+- Invoice processing
+- Resume parsing
+- Form data extraction
+
+### 17. **Topic Modeling UDFs**
+
+Assign topics to text using pre-trained models or LDA.
+
+```sql
+SELECT assignTopic('The stock market crashed today...')
+-- Returns: "finance" or probability distribution
+
+SELECT topicDistribution(article_text)
+-- Returns: {"finance": 0.8, "politics": 0.1, ...}
+```
+
+**Use Cases:**
+- Content categorization
+- News aggregation
+- Document organization
+
+### 18. **Text Generation UDFs**
+
+Generate text based on templates or LLM completion.
+
+```sql
+SELECT generateSummaryTemplate(title, content, template)
+-- Returns: Generated summary using template
+
+SELECT completeText('The quick brown fox...', max_tokens=10)
+-- Returns: Text completion
+```
+
+**Use Cases:**
+- Automated reporting
+- Content generation
+- Text completion
+
+### 19. **Sentiment Scoring (Fine-grained) UDFs**
+
+More detailed sentiment analysis beyond positive/negative/neutral.
+
+```sql
+SELECT sentimentScore('I love this product!')
+-- Returns: 0.95 (confidence score)
+
+SELECT sentimentWithEmotions('I am angry about this!')
+-- Returns: {"sentiment": "negative", "emotions": {"anger": 0.8, ...}}
+```
+
+**Emotions:**
+- Joy, sadness, anger, fear, surprise, disgust
+- Valence and arousal scores
+
+**Use Cases:**
+- Customer feedback analysis
+- Social media monitoring
+- Brand sentiment tracking
+
+### 20. **Text Translation UDFs**
+
+Translate text between languages using local or API models.
+
+```sql
+SELECT translateText('Hello world', 'en', 'es')
+-- Returns: "Hola mundo"
+
+SELECT detectAndTranslate('Bonjour le monde', 'en')
+-- Returns: "Hello world"
+```
+
+**Use Cases:**
+- Multi-language support
+- Content localization
+- Cross-language analytics
+
+### 21. **Time/Date Extraction UDFs**
+
+Extract temporal expressions from text.
+
+```sql
+SELECT extractDates('Meeting scheduled for next Tuesday at 3pm')
+-- Returns: ["2024-01-09T15:00:00"]
+
+SELECT normalizeDate('in 2 weeks', '2024-01-01')
+-- Returns: "2024-01-15"
+```
+
+**Use Cases:**
+- Scheduling systems
+- Event extraction
+- Document timeline analysis
+
+### 22. **Currency/Money Extraction UDFs**
+
+Extract and normalize monetary values.
+
+```sql
+SELECT extractMoney('Price: $999.99')
+-- Returns: {"amount": 999.99, "currency": "USD"}
+
+SELECT normalizeCurrency('€100', 'USD', rate=1.1)
+-- Returns: 110.0
+```
+
+**Use Cases:**
+- Financial document processing
+- Price comparison
+- E-commerce analytics
+
+### 23. **Text Clustering UDFs**
+
+Group similar texts into clusters.
+
+```sql
+SELECT textClusterId(text, num_clusters=10)
+-- Returns: Cluster ID (0-9)
+
+SELECT clusterTopics(arrayJoin(texts))
+-- Returns: Dominant topics per cluster
+```
+
+**Use Cases:**
+- Document grouping
+- Customer segmentation
+- Content organization
+
+### 24. **Semantic Search UDFs**
+
+Find semantically similar texts.
+
+```sql
+SELECT findSimilar(query, table.column, limit=5)
+-- Returns: Top 5 most similar texts
+
+SELECT semanticSimilarity(text1, text2)
+-- Returns: Similarity score (0-1)
+```
+
+**Use Cases:**
+- Search engines
+- Recommendation systems
+- Duplicate detection
+
+### 25. **Text Quality Scoring UDFs**
+
+Assess overall text quality.
+
+```sql
+SELECT textQualityScore(review_text)
+-- Returns: JSON with grammar, spelling, clarity scores
+
+SELECT hasGrammarIssues('This sentence have a error')
+-- Returns: 1 (true)
+```
+
+**Use Cases:**
+- Content moderation
+- Quality assurance
+- Automated editing
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Simple Regex/Rule-Based UDFs (Quick Wins)
+- **PII Detection** (phone, email, SSN, credit card)
+- **Phone Extraction** (already exists, extend)
+- **Text Cleaning/Normalization**
+- **Text Complexity Scoring**
+- **Currency/Money Extraction**
+
+### Phase 2: Local ML Models (Medium Complexity)
+- **Sentiment Classification** (use fasttext or similar)
+- **Language Detection** (use whatlang-rs or cld)
+- **Text Deduplication** (MinHash/SimHash)
+- **Keyword Extraction** (TF-IDF, RAKE)
+
+### Phase 3: Embeddings-based UDFs (High Value)
+- **Text Embeddings** (sentence-transformers via candle)
+- **Semantic Similarity**
+- **Semantic Search**
+- **Text Clustering**
+
+### Phase 4: API-based UDFs (High Cost, High Value)
+- **Text Summarization** (OpenAI/Claude API)
+- **NER** (spaCy or OpenAI)
+- **Text Generation**
+- **Translation** (DeepL or OpenAI)
+
+### Phase 5: Advanced ML Models
+- **Topic Modeling** (LDA, BERT-based)
+- **Question Answering**
+- **Text Quality Scoring**
+
+---
+
+## Quick Start Implementation: PII Detection
+
+Here's a simple implementation that can be done quickly:
+
+```rust
+// pii/Cargo.toml
+[dependencies]
+anyhow = "1.0"
+regex = "1.10"
+shared = { path = "../shared" }
+
+// pii/src/lib.rs
+use regex::Regex;
+use std::sync::LazyLock;
+
+static EMAIL_RE: LazyLock<Regex> = LazyLock::new(
+    || Regex::new(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b").unwrap()
+);
+
+static PHONE_RE: LazyLock<Regex> = LazyLock::new(
+    || Regex::new(r"\+?\d{1,3}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}").unwrap()
+);
+
+static SSN_RE: LazyLock<Regex> = LazyLock::new(
+    || Regex::new(r"\b\d{3}-\d{2}-\d{4}\b").unwrap()
+);
+
+static CREDIT_CARD_RE: LazyLock<Regex> = LazyLock::new(
+    || Regex::new(r"\b(?:\d[ -]*?){13,16}\b").unwrap()
+);
+
+pub fn detect_pii(s: &str) -> Option<String> {
+    let mut pii_found = std::collections::HashMap::new();
+
+    if EMAIL_RE.is_match(s) {
+        pii_found.insert("email", true);
+    }
+    if PHONE_RE.is_match(s) {
+        pii_found.insert("phone", true);
+    }
+    if SSN_RE.is_match(s) {
+        pii_found.insert("ssn", true);
+    }
+    if CREDIT_CARD_RE.is_match(s) {
+        pii_found.insert("credit_card", true);
+    }
+
+    if pii_found.is_empty() {
+        None
+    } else {
+        Some(serde_json::to_string(&pii_found).unwrap())
+    }
+}
+
+pub fn redact_pii(s: &str) -> Option<String> {
+    let result = EMAIL_RE.replace_all(s, "[EMAIL]");
+    let result = PHONE_RE.replace_all(&result, "[PHONE]");
+    let result = SSN_RE.replace_all(&result, "[SSN]");
+    let result = CREDIT_CARD_RE.replace_all(&result, "[CARD]");
+    Some(result.into_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_pii() {
+        let text = "Contact me at john@example.com or 555-123-4567";
+        let result = detect_pii(text);
+        assert!(result.is_some());
+        let pii: serde_json::Value = serde_json::from_str(&result.unwrap()).unwrap();
+        assert_eq!(pii["email"], true);
+        assert_eq!(pii["phone"], true);
+    }
+
+    #[test]
+    fn test_redact_pii() {
+        let text = "Email: john@example.com, Phone: 555-123-4567";
+        let result = redact_pii(text).unwrap();
+        assert!(result.contains("[EMAIL]"));
+        assert!(result.contains("[PHONE]"));
+        assert!(!result.contains("john@example.com"));
+    }
+}
+```
+
+This PII detection UDF:
+- Is simple to implement (no ML required)
+- Provides immediate value (privacy compliance)
+- Can be extended with more patterns
+- Works fast (regex-based)
+- Can be a building block for more advanced features
