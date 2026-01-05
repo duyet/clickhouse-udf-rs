@@ -318,7 +318,10 @@ mod tests {
         env::remove_var("OPENAI_API_KEY_CMD");
 
         let result = get_api_key();
-        assert!(result.is_err(), "get_api_key should return Err when no API key is configured");
+        assert!(
+            result.is_err(),
+            "get_api_key should return Err when no API key is configured"
+        );
         assert!(result.unwrap_err().to_string().contains("No API key found"));
 
         // Restore original values
