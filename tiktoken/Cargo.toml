@@ -17,4 +17,4 @@ path = 'src/bin/tiktoken-encode.rs'
 [dependencies]
 anyhow = "1.0.82"
 shared = { path = "../shared" }
-tiktoken-rs = "0.5"
+tiktoken-rs = "0.9"
