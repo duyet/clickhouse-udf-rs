@@ -18,6 +18,10 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-url
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 has-url
 -rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 array-topk
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 tiktoken-count
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 tiktoken-encode
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 extract-phone
+-rwxr-xr-x    1 duet  staff   434K Feb 24 21:26 string-format
 
 ```
 
@@ -25,6 +29,8 @@ $ ls -lhp target/release | grep -v '/\|\.d'
 2. [vin](#2-vin)
 3. [url](#3-url)
 4. [array](#4-array)
+5. [tiktoken](#5-tiktoken)
+6. [string](#6-string)
 
 
 # Usage
@@ -367,7 +373,135 @@ $ ls -lhp target/release | grep -v '/\|\.d'
   ```
 </details>
 
+## 5. `tiktoken`
 
+Token counting and encoding for GPT models using tiktoken.
+
+<details>
+  <summary>
+    Put the <strong>tiktoken</strong> binaries into <code>user_scripts</code> folder.
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_tiktoken_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_tiktoken_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+
+  tiktoken-count
+  tiktoken-encode
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_tiktoken_function.xml</code>
+  </summary>
+
+  ```xml
+  <functions>
+    <!-- tiktoken -->
+    <function>
+        <name>tiktokenCount</name>
+        <type>executable_pool</type>
+        <command>tiktoken-count</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+    <function>
+        <name>tiktokenEncode</name>
+        <type>executable_pool</type>
+        <command>tiktoken-encode</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+  </functions>
+  ```
+</details>
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  -- Count tokens for GPT models
+  SELECT tiktokenCount('Hello, world!')
+
+  -- Encode text to token IDs
+  SELECT tiktokenEncode('Hello, world!')
+  ```
+</details>
+
+## 6. `string`
+
+String processing utilities.
+
+<details>
+  <summary>
+    Put the <strong>string</strong> binaries into <code>user_scripts</code> folder.
+  </summary>
+
+  ```bash
+  $ cd /var/lib/clickhouse/user_scripts/
+  $ wget https://github.com/duyet/clickhouse-udf-rs/releases/download/0.1.8/clickhouse_udf_string_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+  $ tar zxvf clickhouse_udf_string_v0.1.8_x86_64-unknown-linux-musl.tar.gz
+
+  extract-phone
+  string-format
+  ```
+</details>
+
+<details>
+  <summary>
+    Creating UDF using XML configuration <code>custom_udf_string_function.xml</code>
+  </summary>
+
+  ```xml
+  <functions>
+    <!-- string -->
+    <function>
+        <name>extractPhone</name>
+        <type>executable_pool</type>
+        <command>extract-phone</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+    <function>
+        <name>stringFormat</name>
+        <type>executable_pool</type>
+        <command>string-format</command>
+        <format>TabSeparated</format>
+        <argument>
+            <type>String</type>
+            <name>value</name>
+        </argument>
+        <return_type>String</return_type>
+    </function>
+  </functions>
+  ```
+</details>
+
+<details>
+  <summary>ClickHouse example queries</summary>
+
+  ```sql
+  -- Extract phone numbers
+  SELECT extractPhone('Call me at 555-123-4567 or 555.987.6543')
+
+  -- Format strings (remove extra whitespace)
+  SELECT stringFormat('Hello    world')
+  ```
+</details>
 
 # Generate README
 
