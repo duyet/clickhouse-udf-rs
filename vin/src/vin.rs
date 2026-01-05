@@ -254,7 +254,7 @@ pub fn vin_cleaner(vin: &str) -> Option<String> {
 
     for re in VIN_REGEXES.iter() {
         if let Some(mat) = re.find(&vin) {
-            return Some(mat.as_str().to_uppercase());
+            return Some(mat.as_str().to_string());
         }
     }
 

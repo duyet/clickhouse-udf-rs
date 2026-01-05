@@ -23,10 +23,9 @@ pub fn to_string<T: CoordNum + std::fmt::Display>(linestring: LineString<T>) -> 
 }
 
 pub fn parse_wkt(s: &str) -> Option<String> {
-    match LineString::<f64>::try_from_wkt_str(s) {
-        Ok(linestring) => Some(to_string(linestring)),
-        Err(_err) => Some("".to_string()),
-    }
+    LineString::<f64>::try_from_wkt_str(s)
+        .ok()
+        .map(to_string)
 }
 
 #[cfg(test)]
@@ -42,6 +41,6 @@ mod tests {
     #[test]
     fn test_invalid_input() {
         let input = "LINESTRING(0 0, 1 1, 2 2";
-        assert_eq!(parse_wkt(input).unwrap(), "");
+        assert_eq!(parse_wkt(input), None);
     }
 }

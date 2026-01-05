@@ -12,4 +12,12 @@ shared = { path = "./shared" }
 topk = "0.7.0"
 tiktoken-rs = "0.9"
 
+# Optimize release builds for smaller binaries and better performance
+[profile.release]
+lto = true           # Link-time optimization
+codegen-units = 1    # Better optimization at cost of compile time
+strip = true         # Strip symbols from binary
+opt-level = 3        # Maximum optimization level
+panic = "abort"      # Reduce binary size
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
