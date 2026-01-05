@@ -21,15 +21,42 @@
 //!
 //! # Configuration
 //!
-//! Set environment variables in ClickHouse UDF config:
-//! - `OPENAI_API_KEY`: Your OpenAI API key
+//! ## API Key Configuration (multiple methods, tried in order):
+//!
+//! ### Method 1: File (recommended for production)
+//! ```xml
+//! <environment>
+//!     <OPENAI_API_KEY_FILE>/run/secrets/openai-key</OPENAI_API_KEY_FILE>
+//!     <!-- Kubernetes/Docker secrets mount point -->
+//! </environment>
+//! ```
+//!
+//! ### Method 2: Environment Variable
+//! ```xml
+//! <environment>
+//!     <OPENAI_API_KEY>sk-...</OPENAI_API_KEY>
+//! </environment>
+//! ```
+//!
+//! ### Method 3: External Command (for secret managers)
+//! ```xml
+//! <environment>
+//!     <OPENAI_API_KEY_CMD>/usr/local/bin/get-secret openai</OPENAI_API_KEY_CMD>
+//!     <!-- Runs command and uses stdout as the key -->
+//! </environment>
+//! ```
+//!
+//! ## Other Configuration:
 //! - `OPENAI_MODEL`: Model to use (default: gpt-4o-mini)
 //! - `OPENAI_MAX_TOKENS`: Max tokens in response (default: 1000)
 //! - `OPENAI_TEMPERATURE`: Temperature 0-2 (default: 0.7)
+//! - `OPENAI_API_BASE`: Custom API base URL (optional, for Azure/OpenAI-compatible)
 
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::env;
+use std::fs;
+use std::process::Command;
 
 /// OpenAI API response structure
 #[derive(Debug, Deserialize)]
@@ -100,12 +127,8 @@ pub fn llm(input: &str) -> Option<String> {
 
 /// Call OpenAI Chat Completions API
 fn call_openai(prompt: &str) -> Result<String> {
-    let api_key = env::var("OPENAI_API_KEY")
-        .unwrap_or_else(|_| "".to_string());
-
-    if api_key.is_empty() {
-        anyhow::bail!("OPENAI_API_KEY environment variable not set");
-    }
+    // Try multiple methods to get API key (in order of preference)
+    let api_key = get_api_key()?;
 
     let model = env::var("OPENAI_MODEL")
         .unwrap_or_else(|_| "gpt-4o-mini".to_string());
@@ -119,6 +142,9 @@ fn call_openai(prompt: &str) -> Result<String> {
         .unwrap_or_else(|_| "0.7".to_string())
         .parse()
         .unwrap_or(0.7);
+
+    let api_base = env::var("OPENAI_API_BASE")
+        .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -137,29 +163,79 @@ fn call_openai(prompt: &str) -> Result<String> {
         "temperature": temperature
     });
 
+    let url = format!("{}/chat/completions", api_base);
     let response = client
-        .post("https://api.openai.com/v1/chat/completions")
+        .post(&url)
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&payload)
         .send()
-        .context("Failed to send request to OpenAI")?;
+        .with_context(|| format!("Failed to send request to {}", url))?;
 
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().unwrap_or_else(|_| "Unknown error".to_string());
-        anyhow::bail!("OpenAI API error: {} - {}", status, error_text);
+        anyhow::bail!("LLM API error: {} - {}", status, error_text);
     }
 
     let chat_response: ChatResponse = response
         .json()
-        .context("Failed to parse OpenAI response")?;
+        .context("Failed to parse LLM response")?;
 
     chat_response
         .choices
         .first()
         .map(|c| c.message.content.trim().to_string())
-        .ok_or_else(|| anyhow::anyhow!("Empty response from OpenAI"))
+        .ok_or_else(|| anyhow::anyhow!("Empty response from LLM"))
+}
+
+/// Get API key from multiple sources (tried in order):
+/// 1. OPENAI_API_KEY_FILE - Read from file
+/// 2. OPENAI_API_KEY - Direct environment variable
+/// 3. OPENAI_API_KEY_CMD - Execute command and use stdout
+fn get_api_key() -> Result<String> {
+    // Method 1: Read from file (most secure for production)
+    if let Ok(file_path) = env::var("OPENAI_API_KEY_FILE") {
+        let key = fs::read_to_string(&file_path)
+            .with_context(|| format!("Failed to read API key from file: {}", file_path))?;
+        let key = key.trim();
+        if !key.is_empty() {
+            return Ok(key.to_string());
+        }
+    }
+
+    // Method 2: Direct environment variable
+    if let Ok(key) = env::var("OPENAI_API_KEY") {
+        let key = key.trim();
+        if !key.is_empty() {
+            return Ok(key.to_string());
+        }
+    }
+
+    // Method 3: Execute command to get key (for secret managers)
+    if let Ok(cmd_str) = env::var("OPENAI_API_KEY_CMD") {
+        let parts: Vec<&str> = cmd_str.split_whitespace().collect();
+        if !parts.is_empty() {
+            let output = Command::new(parts[0])
+                .args(&parts[1..])
+                .output()
+                .with_context(|| format!("Failed to execute command: {}", cmd_str))?;
+
+            if output.status.success() {
+                let key = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !key.is_empty() {
+                    return Ok(key);
+                }
+            }
+        }
+    }
+
+    anyhow::bail!(
+        "No API key found. Set one of:\n\
+         - OPENAI_API_KEY_FILE=/path/to/key.txt\n\
+         - OPENAI_API_KEY=sk-...\n\
+         - OPENAI_API_KEY_CMD=/path/to/get-secret"
+    )
 }
 
 #[cfg(test)]
@@ -199,5 +275,31 @@ mod tests {
         // This test would require mocking the OpenAI API
         // For now, we just verify the function compiles
         assert!(true);
+    }
+
+    #[test]
+    fn test_get_api_key_priority() {
+        // Test that environment variable has priority over unset file
+        env::set_var("OPENAI_API_KEY", "test-key-from-env");
+        env::remove_var("OPENAI_API_KEY_FILE");
+        env::remove_var("OPENAI_API_KEY_CMD");
+
+        let result = get_api_key();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "test-key-from-env");
+
+        // Cleanup
+        env::remove_var("OPENAI_API_KEY");
+    }
+
+    #[test]
+    fn test_get_api_key_fails_when_none_set() {
+        env::remove_var("OPENAI_API_KEY");
+        env::remove_var("OPENAI_API_KEY_FILE");
+        env::remove_var("OPENAI_API_KEY_CMD");
+
+        let result = get_api_key();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("No API key found"));
     }
 }

@@ -599,7 +599,18 @@ Generic LLM function for any prompt-based task using OpenAI API.
         </argument>
         <return_type>String</return_type>
         <environment>
-            <OPENAI_API_KEY>/path/to/openai-api-key.txt</OPENAI_API_KEY>
+            <!-- Choose ONE method for API key (tried in order): -->
+
+            <!-- Method 1: Read from file (recommended for production) -->
+            <OPENAI_API_KEY_FILE>/run/secrets/openai-key</OPENAI_API_KEY_FILE>
+
+            <!-- Method 2: Direct environment variable -->
+            <!-- <OPENAI_API_KEY>sk-proj-...</OPENAI_API_KEY> -->
+
+            <!-- Method 3: Execute command to get key (for secret managers) -->
+            <!-- <OPENAI_API_KEY_CMD>/usr/local/bin/vault kv get -field=value secret/openai</OPENAI_API_KEY_CMD> -->
+
+            <!-- Other settings -->
             <OPENAI_MODEL>gpt-4o-mini</OPENAI_MODEL>
             <OPENAI_MAX_TOKENS>1000</OPENAI_MAX_TOKENS>
             <OPENAI_TEMPERATURE>0.7</OPENAI_TEMPERATURE>
@@ -636,6 +647,25 @@ Generic LLM function for any prompt-based task using OpenAI API.
 </details>
 
 **Note**: The prompt template uses `{0}`, `{1}`, `{2}`... as placeholders. Values are passed tab-separated.
+
+**Secret Configuration Options:**
+
+1. **File-based** (Recommended): Mount secrets from Kubernetes/Docker secrets
+   ```xml
+   <OPENAI_API_KEY_FILE>/run/secrets/openai-key</OPENAI_API_KEY_FILE>
+   ```
+
+2. **Direct value**: For testing or simple setups
+   ```xml
+   <OPENAI_API_KEY>sk-proj-...</OPENAI_API_KEY>
+   ```
+
+3. **Command execution**: For secret managers (Vault, AWS Secrets Manager, etc.)
+   ```xml
+   <OPENAI_API_KEY_CMD>/usr/local/bin/get-secret openai</OPENAI_API_KEY_CMD>
+   ```
+
+The UDF tries each method in order and uses the first one that succeeds.
 
 ## Performance
 
