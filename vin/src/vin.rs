@@ -13,7 +13,7 @@
 //! # Examples
 //!
 //! ```
-//! use vin::*;
+//! use crate::vin::{vin_cleaner, vin_manuf, vin_year, vin_continent};
 //!
 //! // Clean and validate a VIN
 //! let cleaned = vin_cleaner("1G1ND52F14M712344").unwrap();
@@ -21,7 +21,7 @@
 //!
 //! // Get manufacturer
 //! let manufacturer = vin_manuf("1G1ND52F14M712344").unwrap();
-//! assert_eq!(manufacturer, "Chevrolet USA");
+//! assert_eq!(manufacturer, "General Motors USA");
 //!
 //! // Get model year
 //! let year = vin_year("1G1ND52F14M712344").unwrap();
@@ -164,12 +164,12 @@ pub fn wmi(vin: &str) -> Option<String> {
 /// ```
 /// use vin::vin_manuf;
 ///
-/// assert_eq!(vin_manuf("1G1ND52F14M712344").unwrap(), "Chevrolet USA");
+/// assert_eq!(vin_manuf("1G1ND52F14M712344").unwrap(), "General Motors USA");
 /// assert_eq!(vin_manuf("JTDKN3DU9F0421684").unwrap(), "Toyota");
 /// assert_eq!(vin_manuf("WF05XXGCC5FJ00000").unwrap(), "Ford Germany");
 ///
 /// // Handles dirty input
-/// assert_eq!(vin_manuf("  1G1ND52F14M712344  ").unwrap(), "Chevrolet USA");
+/// assert_eq!(vin_manuf("  1G1ND52F14M712344  ").unwrap(), "General Motors USA");
 /// ```
 pub fn vin_manuf(vin: &str) -> Option<String> {
     let vin = vin_cleaner(vin).unwrap_or_default();
