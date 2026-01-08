@@ -22,14 +22,14 @@ jobs:
         target:
           - x86_64-pc-windows-gnu
           - x86_64-unknown-linux-musl
-          - x86_64-apple-darwin
+        # Note: Apple (x86_64-apple-darwin) builds disabled due to osxcross SDK limitation
+        # The rust-build action uses macOS SDK 10.10 which is incompatible with Rust 1.85+
+        # To enable Apple builds, the action needs to be updated or use a different build approach
         include:
           - target: x86_64-pc-windows-gnu
             archive: zip
           - target: x86_64-unknown-linux-musl
             archive: tar.gz
-          - target: x86_64-apple-darwin
-            archive: zip
     steps:
       - uses: actions/checkout@v4
 
