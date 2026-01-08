@@ -31,7 +31,7 @@ jobs:
           - target: x86_64-apple-darwin
             archive: zip
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
 
       - name: Compile and release
         uses: rust-build/rust-build.action@v1.4.5
@@ -43,6 +43,7 @@ jobs:
           ARCHIVE_NAME: clickhouse_udf_${{ matrix.src_dir }}_${{ github.ref_name }}_${{ matrix.target }}
           SRC_DIR: ${{ matrix.src_dir }}
           MINIFY: "yes"
+          TOOLCHAIN_VERSION: "1.86.0"
 
   update-readme:
     name: update README.md
@@ -50,7 +51,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
 
       - name: Generate README.md
         env:
