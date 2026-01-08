@@ -3,7 +3,7 @@
 [![CI/CD](https://github.com/duyet/clickhouse-udf-rs/workflows/CI%2FCD/badge.svg)](https://github.com/duyet/clickhouse-udf-rs/actions)
 [![Cargo](https://img.shields.io/crates/v/clickhouse-udf-rs)](https://crates.io/crates/clickhouse-udf-rs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/rust-1.73%2B-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.86%2B-orange.svg)](https://www.rust-lang.org/)
 
 Collection of some useful UDFs for ClickHouse written in Rust.
 
