@@ -43,7 +43,7 @@ jobs:
           ARCHIVE_NAME: clickhouse_udf_${{ matrix.src_dir }}_${{ github.ref_name }}_${{ matrix.target }}
           SRC_DIR: ${{ matrix.src_dir }}
           MINIFY: "yes"
-          TOOLCHAIN_VERSION: "1.80.0"
+          TOOLCHAIN_VERSION: "1.85.0"
 
   update-readme:
     name: update README.md
