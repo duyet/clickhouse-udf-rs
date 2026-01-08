@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use shared::io::{args, process_stdin, ProcessFn};
-use topk::FilteredSpaceSaving;
+use std::collections::HashMap;
 
 // Constants for input validation
 const MAX_K: usize = 10_000; // Maximum k value to prevent excessive memory usage
@@ -35,9 +35,13 @@ const MAX_LINE_LENGTH: usize = 1_000_000; // 1MB max input line length
 ///
 /// # Algorithm
 ///
-/// Uses the FilteredSpaceSaving algorithm for efficient top-k tracking with
-/// approximate frequency counting. Results are deterministically ordered for
-/// stable test outputs.
+/// Uses exact frequency counting with HashMap for deterministic results:
+/// 1. Count all element frequencies exactly
+/// 2. Sort by frequency (descending), then by value (ascending)
+/// 3. Return top-k elements
+///
+/// This provides exact, deterministic results suitable for testing and
+/// production use.
 ///
 /// # Safety & Validation
 ///
@@ -101,22 +105,21 @@ fn topk_fn(k: usize) -> ProcessFn {
             return Some("[]".to_string());
         }
 
-        let mut topk = FilteredSpaceSaving::new(k);
-        for i in array {
-            topk.insert(i, 1);
+        // Count frequencies exactly using HashMap
+        let mut freq: HashMap<&str, usize> = HashMap::new();
+        for item in array {
+            *freq.entry(item).or_insert(0) += 1;
         }
 
-        let mut topk_result = topk.into_sorted_vec();
-
-        // Stable sort by frequency (descending), then by value (ascending) for deterministic ordering
-        // Note: sort_by() is stable by default in Rust
-        topk_result.sort_by(|a, b| {
-            b.1.estimated_count()
-                .cmp(&a.1.estimated_count())
-                .then_with(|| a.0.cmp(b.0))
+        // Convert to vec and sort by frequency (desc), then by value (asc) for deterministic results
+        let mut sorted_items: Vec<(&str, usize)> = freq.into_iter().collect();
+        sorted_items.sort_by(|a, b| {
+            b.1.cmp(&a.1) // Frequency descending
+                .then_with(|| a.0.cmp(b.0)) // Value ascending for ties
         });
 
-        let topk_result_array = topk_result
+        // Take top-k elements
+        let topk_result_array = sorted_items
             .iter()
             .take(k)
             .map(|i| i.0)
@@ -174,7 +177,7 @@ mod tests {
         assert_eq!(topk("[]"), Some("[]".to_string()));
         assert_eq!(topk("[1]"), Some("[1]".to_string()));
         assert_eq!(topk("[1,1,2]"), Some("[1]".to_string()));
-        assert_eq!(topk("[1,1,2,2]"), Some("[2]".to_string()));
+        assert_eq!(topk("[1,1,2,2]"), Some("[1]".to_string()));
         assert_eq!(topk("[1,1,2,2,2]"), Some("[2]".to_string()));
         assert_eq!(topk("[1,1,2,2,2,3]"), Some("[2]".to_string()));
     }
@@ -189,7 +192,7 @@ mod tests {
         assert_eq!(topk("[1,1,2,2]"), Some("[1,2]".to_string()));
         assert_eq!(topk("[1,1,2,2,2]"), Some("[2,1]".to_string()));
         assert_eq!(topk("[1,1,2,2,2,3]"), Some("[2,1]".to_string()));
-        assert_eq!(topk("[1,1,2,2,2,3,3]"), Some("[2,3]".to_string()));
+        assert_eq!(topk("[1,1,2,2,2,3,3]"), Some("[2,1]".to_string()));
         assert_eq!(topk("[1,1,2,2,2,3,3,3]"), Some("[2,3]".to_string()));
     }
 
@@ -236,8 +239,8 @@ mod tests {
     #[test]
     fn test_topk_whitespace_handling() {
         let topk = topk_fn(2);
-        // Test with extra whitespace - FilteredSpaceSaving may not preserve exact order for equal frequencies
-        assert_eq!(topk("[ 1 , 2 , 2 , 3 ]"), Some("[2,3]".to_string()));
+        // Test with extra whitespace
+        assert_eq!(topk("[ 1 , 2 , 2 , 3 ]"), Some("[2,1]".to_string()));
         assert_eq!(topk("[  1,  2,  2  ]"), Some("[2,1]".to_string()));
     }
 
@@ -245,10 +248,9 @@ mod tests {
     fn test_topk_malformed_input() {
         let topk = topk_fn(2);
         // Missing closing bracket - still processes what it can
-        // Note: FilteredSpaceSaving is approximate, may not preserve exact order for equal frequencies
-        assert_eq!(topk("[1,2,3"), Some("[2,3]".to_string()));
+        assert_eq!(topk("[1,2,3"), Some("[1,2]".to_string()));
         // Extra commas create empty elements that get filtered
-        assert_eq!(topk("[1,,2,,3]"), Some("[2,3]".to_string()));
+        assert_eq!(topk("[1,,2,,3]"), Some("[1,2]".to_string()));
         assert_eq!(topk("[,,,]"), Some("[]".to_string()));
     }
 
