@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.5
+        uses: rust-build/rust-build.action@v1.5.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -43,7 +43,8 @@ jobs:
           ARCHIVE_NAME: clickhouse_udf_${{ matrix.src_dir }}_${{ github.ref_name }}_${{ matrix.target }}
           SRC_DIR: ${{ matrix.src_dir }}
           MINIFY: "yes"
-          TOOLCHAIN_VERSION: "1.86.0"
+          TOOLCHAIN_VERSION: "stable"
+          CARGO_PROFILE: "release"
 
   update-readme:
     name: update README.md
