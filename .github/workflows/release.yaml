@@ -59,7 +59,7 @@ jobs:
         run: |
           cargo run --bin readme-generator . > README.md
 
-      - uses: EndBug/add-and-commit@v9
+      - uses: EndBug/add-and-commit@v10
         with:
           add: README.md
           author_name: duyetbot
