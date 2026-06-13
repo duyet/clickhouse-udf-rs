@@ -9,7 +9,7 @@ edition = "2021"
 anyhow = "1.0.82"
 regex = "1.10.4"
 shared = { path = "./shared" }
-tiktoken-rs = "0.9"
+tiktoken-rs = "0.12"
 
 # Optimize release builds for smaller binaries and better performance
 [profile.release]
