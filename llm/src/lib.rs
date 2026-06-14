@@ -240,6 +240,9 @@ fn get_api_key() -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_template_replacement_single() {
@@ -277,6 +280,8 @@ mod tests {
 
     #[test]
     fn test_get_api_key_priority() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+
         // Save original values
         let orig_key = env::var("OPENAI_API_KEY").ok();
         let orig_file = env::var("OPENAI_API_KEY_FILE").ok();
@@ -307,6 +312,8 @@ mod tests {
 
     #[test]
     fn test_get_api_key_fails_when_none_set() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+
         // Save original values
         let orig_key = env::var("OPENAI_API_KEY").ok();
         let orig_file = env::var("OPENAI_API_KEY_FILE").ok();
