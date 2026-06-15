@@ -16,7 +16,7 @@ serde_json = "1.0"
 [dependencies.reqwest]
 version = "0.13"
 default-features = false
-features = ["rustls-tls", "blocking", "json"]
+features = ["rustls", "blocking", "json"]
 
 [dev-dependencies]
 mockito = "1.4"
