@@ -14,5 +14,5 @@ anyhow.workspace = true
 cargo_toml = "0.22.0"
 change-case = "0.2.0"
 serde = { version = "^1.0.200", features = ["derive"] }
-tera = "1.19.1"
+tera = "2.0.0"
 toml = "1.0.0"
